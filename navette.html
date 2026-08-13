@@ -51,7 +51,7 @@
         <input type="text" id="input-name" placeholder="Ex : Marie Dupont" required maxlength="40">
       </label>
       <label>Nombre de places
-        <input type="number" id="input-guests" min="1" max="4" value="1" required>
+        <input type="number" id="input-guests" min="1" max="8" value="1" required>
       </label>
       <button type="submit" class="btn-primary">Confirmer la réservation</button>
     </form>
@@ -69,7 +69,7 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, orderBy }
+  import { getFirestore, collection, getDocs, doc, updateDoc, arrayUnion, increment, query, orderBy, runTransaction, getDoc }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -84,7 +84,8 @@
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
-  let selectedTrajetId = null;
+  let selectedTrajetId   = null;
+  let selectedTrajetData = null;
 
   // Charger les trajets
   async function loadTrajets() {
@@ -99,17 +100,23 @@
         return;
       }
 
-      snap.forEach(doc => {
-        const t = doc.data();
+      snap.forEach(docSnap => {
+        const t = docSnap.data();
+        const placesRestantes = t.placesRestantes ?? 8;
+        const complet = placesRestantes <= 0;
+
         const card = document.createElement('div');
-        card.className = 'trajet-card';
+        card.className = 'trajet-card' + (complet ? ' complet' : '');
         card.innerHTML = `
           <div class="trajet-heure">${t.heure}</div>
           <div class="trajet-route">${t.depart} → ${t.arrivee}</div>
           <div class="trajet-notes">${t.notes}</div>
-          <button class="btn-primary trajet-btn" data-id="${doc.id}" data-info="${t.heure} — ${t.depart} → ${t.arrivee}">
+          <div class="trajet-places ${complet ? 'complet' : ''}">
+            ${complet ? '🚫 Complet' : `🪑 ${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`}
+          </div>
+          ${!complet ? `<button class="btn-primary trajet-btn" data-id="${docSnap.id}" data-info="${t.heure} — ${t.depart} → ${t.arrivee}" data-places="${placesRestantes}">
             Réserver
-          </button>
+          </button>` : ''}
         `;
         list.appendChild(card);
       });
@@ -118,7 +125,10 @@
       document.querySelectorAll('.trajet-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           selectedTrajetId = btn.dataset.id;
+          const placesRestantes = parseInt(btn.dataset.places);
           document.getElementById('modal-trajet-info').textContent = btn.dataset.info;
+          document.getElementById('input-guests').max = placesRestantes;
+          document.getElementById('input-guests').value = 1;
           document.getElementById('modal').style.display = 'flex';
           document.getElementById('modal-success').style.display = 'none';
           document.getElementById('modal-error').style.display = 'none';
@@ -142,19 +152,38 @@
     e.preventDefault();
     const name   = document.getElementById('input-name').value.trim();
     const guests = parseInt(document.getElementById('input-guests').value);
+    const trajetRef = doc(db, 'navette_trajets', selectedTrajetId);
 
     try {
-      await addDoc(collection(db, 'navette_reservations'), {
-        trajetId:  selectedTrajetId,
-        name:      name,
-        guests:    guests,
-        createdAt: serverTimestamp()
+      await runTransaction(db, async (transaction) => {
+        const trajetDoc = await transaction.get(trajetRef);
+        if (!trajetDoc.exists()) throw new Error('Trajet introuvable.');
+
+        const placesRestantes = trajetDoc.data().placesRestantes ?? 8;
+        if (guests > placesRestantes) throw new Error('Plus assez de places disponibles.');
+
+        const nouvelleReservation = {
+          name:   name,
+          guests: guests,
+          date:   new Date().toISOString()
+        };
+
+        transaction.update(trajetRef, {
+          placesRestantes: placesRestantes - guests,
+          reservations:    arrayUnion(nouvelleReservation)
+        });
       });
+
       document.getElementById('modal-success').style.display = 'block';
       document.getElementById('reservation-form').style.display = 'none';
       document.getElementById('modal-error').style.display = 'none';
+
+      // Recharger les trajets pour mettre à jour les places
+      loadTrajets();
+
     } catch(e) {
       console.error('Erreur réservation :', e);
+      document.getElementById('modal-error').textContent = '❌ ' + e.message;
       document.getElementById('modal-error').style.display = 'block';
     }
   });
