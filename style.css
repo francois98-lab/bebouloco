@@ -139,3 +139,105 @@ footer p{font-size:13px;margin:4px 0;position:relative;font-weight:300;}
   .resa-form{flex-direction:column;}
   .reservation-box{padding:20px;}
 }
+
+.trajets-columns {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+.trajets-col {
+  flex: 1 1 300px;
+  min-width: 280px;
+  background: #faf8f5;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px #0001;
+}
+.trajets-col h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.trajets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.trajet-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 4px #0001;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+.trajet-card.complet {
+  opacity: 0.6;
+}
+.trajet-heure {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+.trajet-route {
+  color: #2f5a82;
+}
+.trajet-places.complet {
+  color: #b23a2e;
+}
+.btn-primary {
+  background: #2f5a82;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 0.5em 1.2em;
+  cursor: pointer;
+  font-size: 1em;
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal centré */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(30,30,40,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  box-shadow: 0 4px 24px #0002;
+  min-width: 320px;
+  max-width: 95vw;
+  position: relative;
+  text-align: center;
+}
+.modal-close {
+  position: absolute;
+  top: 0.7em;
+  right: 1em;
+  background: none;
+  border: none;
+  font-size: 1.4em;
+  cursor: pointer;
+}
+@media (max-width: 700px) {
+  .trajets-columns {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .trajets-col {
+    min-width: unset;
+    width: 100%;
+  }
+}
+
