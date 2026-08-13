@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadeaux — Notre mariage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="scroll-line" id="scroll-line"></div>
+
+<header>
+  <div class="nav">
+    <div class="brand">Notre mariage</div>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="navette.html">Navette</a>
+      <a href="cadeaux.html" class="active">Cadeaux</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page-hero">
+  <div class="wrap">
+    <p class="eyebrow">Liste de mariage</p>
+    <h1>Notre liste de <em>cadeaux</em></h1>
+    <p class="page-hero-sub">Votre présence est le plus beau des cadeaux. Si vous souhaitez tout de même nous offrir quelque chose, voici quelques idées. Une fois qu'un cadeau est réservé, il n'est plus possible de le reprendre.</p>
+  </div>
+</div>
+
+<section class="wrap">
+  <div id="gifts-loading" class="loading-state">Chargement des cadeaux…</div>
+  <div id="gifts-empty" class="empty-state" style="display:none;">
+    <p>Aucun cadeau pour le moment.</p>
+  </div>
+  <div class="gifts-grid" id="gifts-grid" style="display:none;"></div>
+  <p class="contact-note">Merci de tout cœur pour votre générosité.</p>
+</section>
+
+<footer>
+  <div class="wrap">
+    <h3>Notre mariage</h3>
+    <p class="foot-bottom">Fait avec amour ♥</p>
+  </div>
+</footer>
+
+<script type="module">
+  import { db } from './firebase-config.js';
+  import {
+    collection, onSnapshot, doc,
+    updateDoc, query, orderBy
+  } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  window.addEventListener('scroll',()=>{
+    const el=document.getElementById('scroll-line');
+    const pct=window.scrollY/(document.body.scrollHeight-window.innerHeight)*100;
+    el.style.width=pct+'%';
+  });
+
+  const observer = new IntersectionObserver(entries=>{
+    entries.forEach((e,i)=>{
+      if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*80);observer.unobserve(e.target);}
+    });
+  },{threshold:0.1});
+
+  function sanitize(str){ return String(str).replace(/[<>"'&]/g,'').trim(); }
+
+  const giftIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--terracotta-deep)" stroke-width="1.5" width="32" height="32"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M4 9l8-5 8 5"/><path d="M12 9v11"/></svg>`;
+
+  onSnapshot(query(collection(db,'cadeaux'),orderBy('order','asc')), snap=>{
+    const list    = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const grid    = document.getElementById('gifts-grid');
+    const loading = document.getElementById('gifts-loading');
+    const empty   = document.getElementById('gifts-empty');
+
+    loading.style.display = 'none';
+
+    if(!list.length){
+      empty.style.display = 'block';
+      grid.style.display  = 'none';
+      return;
+    }
+
+    empty.style.display = 'none';
+    grid.style.display  = 'grid';
+    grid.innerHTML = '';
+
+    list.forEach(g=>{
+      const taken     = !!g.takenBy;
+      const safeName  = sanitize(g.name||'');
+      const safeDesc  = sanitize(g.desc||'');
+      const safePrice = sanitize(g.price||'');
+      const safeTaken = taken ? sanitize(g.takenBy) : '';
+      const safeLink  = sanitize(g.link||'');
+      const safePhoto = sanitize(g.photo||'');
+
+      const card = document.createElement('div');
+      card.className = 'gift-card fade-in';
+      card.innerHTML = `
+        <div class="gift-photo">
+          ${safePhoto
+            ?`<img src="${safePhoto}" alt="${safeName}" loading="lazy">`
+            :`<div class="gift-icon-wrap">${giftIcon}</div>`}
+        </div>
+        <div class="gift-body">
+          <h3>${safeName}</h3>
+          <p class="gift-desc">${safeDesc}</p>
+          <span class="gift-price">${safePrice}</span>
+          <span class="gift-status">${taken?'✓ Offert par '+safeTaken:''}</span>
+          <button class="btn-gift${taken?' taken':''}" data-id="${g.id}" data-link="${safeLink}" ${taken?'disabled':''}>
+            ${taken?'Déjà offert ✓':'Offrir ce cadeau'}
+          </button>
+        </div>`;
+      grid.appendChild(card);
+      observer.observe(card);
+    });
+
+    grid.querySelectorAll('.btn-gift:not(.taken)').forEach(btn=>{
+      btn.addEventListener('click', async()=>{
+        const rawDonor = prompt('Votre prénom, pour que les mariés sachent qui les remercier :');
+        if(!rawDonor||!rawDonor.trim()) return;
+        const donor = sanitize(rawDonor);
+        if(donor.length<2||donor.length>40){ alert('Prénom invalide (2 à 40 caractères).'); return; }
+        btn.disabled = true; btn.textContent = 'Envoi…';
+        try{
+          await updateDoc(doc(db,'cadeaux',btn.dataset.id),{ takenBy: donor });
+          if(btn.dataset.link) window.open(btn.dataset.link,'_blank','noopener,noreferrer');
+        } catch(e){
+          alert('Une erreur est survenue. Réessayez.');
+          btn.disabled = false; btn.textContent = 'Offrir ce cadeau';
+          console.error(e);
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>
