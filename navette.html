@@ -36,12 +36,16 @@
   <div class="wrap">
     <div class="trajets-columns">
       <div class="trajets-col">
-        <h2>Aller</h2>
-        <div id="trajets-aller" class="trajets-list"></div>
+        <h2>🚌 Aller</h2>
+        <div id="trajets-aller" class="trajets-list">
+          <p class="loading">Chargement…</p>
+        </div>
       </div>
       <div class="trajets-col">
-        <h2>Retour</h2>
-        <div id="trajets-retour" class="trajets-list"></div>
+        <h2>🏠 Retour</h2>
+        <div id="trajets-retour" class="trajets-list">
+          <p class="loading">Chargement…</p>
+        </div>
       </div>
     </div>
   </div>
@@ -76,7 +80,7 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, collection, getDocs, doc, updateDoc, arrayUnion, increment, query, orderBy, runTransaction, getDoc }
+  import { getFirestore, collection, getDocs, doc, arrayUnion, query, orderBy, runTransaction }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -91,23 +95,23 @@
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
-  let selectedTrajetId   = null;
+  let selectedTrajetId = null;
 
-  // Charger les trajets et les séparer en Aller/Retour
+  // Charger les trajets
   async function loadTrajets() {
-    const allerList = document.getElementById('trajets-aller');
+    const allerList  = document.getElementById('trajets-aller');
     const retourList = document.getElementById('trajets-retour');
-    allerList.innerHTML = '<p class="loading">Chargement…</p>';
+    allerList.innerHTML  = '<p class="loading">Chargement…</p>';
     retourList.innerHTML = '<p class="loading">Chargement…</p>';
 
     try {
-      const q = query(collection(db, 'navette_trajets'), orderBy('order'));
+      const q    = query(collection(db, 'navette_trajets'), orderBy('order'));
       const snap = await getDocs(q);
-      allerList.innerHTML = '';
+      allerList.innerHTML  = '';
       retourList.innerHTML = '';
 
       if (snap.empty) {
-        allerList.innerHTML = '<p class="error-msg">Aucun trajet trouvé.</p>';
+        allerList.innerHTML  = '<p class="error-msg">Aucun trajet trouvé.</p>';
         retourList.innerHTML = '<p class="error-msg">Aucun trajet trouvé.</p>';
         return;
       }
@@ -117,7 +121,6 @@
         const placesRestantes = t.placesRestantes ?? 8;
         const complet = placesRestantes <= 0;
 
-        // On suppose que le champ "type" vaut "aller" ou "retour"
         const card = document.createElement('div');
         card.className = 'trajet-card' + (complet ? ' complet' : '');
         card.innerHTML = `
@@ -125,17 +128,27 @@
           <div class="trajet-route">${t.depart} → ${t.arrivee}</div>
           <div class="trajet-notes">${t.notes ?? ''}</div>
           <div class="trajet-places ${complet ? 'complet' : ''}">
-            ${complet ? '🚫 Complet' : `🪑 ${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`}
+            ${complet
+              ? '🚫 Complet'
+              : `🪑 ${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`
+            }
           </div>
-          ${!complet ? `<button class="btn-primary trajet-btn" data-id="${docSnap.id}" data-info="${t.heure} — ${t.depart} → ${t.arrivee}" data-places="${placesRestantes}">
-            Réserver
-          </button>` : ''}
+          ${!complet ? `
+            <button class="btn-primary trajet-btn"
+              data-id="${docSnap.id}"
+              data-info="${t.heure} — ${t.depart} → ${t.arrivee}"
+              data-places="${placesRestantes}">
+              Réserver
+            </button>` : ''}
         `;
 
-        if (t.type === 'aller') {
-          allerList.appendChild(card);
-        } else if (t.type === 'retour') {
+        // Déduction automatique du type selon le lieu de départ
+        const type = t.depart.toLowerCase().includes('château') ? 'retour' : 'aller';
+
+        if (type === 'retour') {
           retourList.appendChild(card);
+        } else {
+          allerList.appendChild(card);
         }
       });
 
@@ -145,24 +158,32 @@
           selectedTrajetId = btn.dataset.id;
           const placesRestantes = parseInt(btn.dataset.places);
           document.getElementById('modal-trajet-info').textContent = btn.dataset.info;
-          document.getElementById('input-guests').max = placesRestantes;
+          document.getElementById('input-guests').max   = placesRestantes;
           document.getElementById('input-guests').value = 1;
           document.getElementById('modal').style.display = 'flex';
           document.getElementById('modal-success').style.display = 'none';
-          document.getElementById('modal-error').style.display = 'none';
+          document.getElementById('modal-error').style.display   = 'none';
           document.getElementById('reservation-form').style.display = 'block';
         });
       });
 
     } catch(e) {
-      allerList.innerHTML = '<p class="error-msg">Erreur : ' + e.message + '</p>';
+      console.error('Erreur Firestore :', e);
+      allerList.innerHTML  = '<p class="error-msg">Erreur : ' + e.message + '</p>';
       retourList.innerHTML = '<p class="error-msg">Erreur : ' + e.message + '</p>';
     }
   }
 
-  // Fermer modal
+  // Fermer modal en cliquant sur ✕
   document.getElementById('modal-close').addEventListener('click', () => {
     document.getElementById('modal').style.display = 'none';
+  });
+
+  // Fermer modal en cliquant en dehors
+  document.getElementById('modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modal')) {
+      document.getElementById('modal').style.display = 'none';
+    }
   });
 
   // Soumettre réservation
@@ -192,16 +213,17 @@
         });
       });
 
-      document.getElementById('modal-success').style.display = 'block';
-      document.getElementById('reservation-form').style.display = 'none';
-      document.getElementById('modal-error').style.display = 'none';
+      document.getElementById('modal-success').style.display      = 'block';
+      document.getElementById('reservation-form').style.display   = 'none';
+      document.getElementById('modal-error').style.display        = 'none';
 
       // Recharger les trajets pour mettre à jour les places
       loadTrajets();
 
     } catch(e) {
-      document.getElementById('modal-error').textContent = '❌ ' + e.message;
-      document.getElementById('modal-error').style.display = 'block';
+      console.error('Erreur réservation :', e);
+      document.getElementById('modal-error').textContent    = '❌ ' + e.message;
+      document.getElementById('modal-error').style.display  = 'block';
     }
   });
 
@@ -216,5 +238,6 @@
 </script>
 </body>
 </html>
+
 
 
