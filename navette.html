@@ -34,8 +34,15 @@
 
 <section class="trajets-section">
   <div class="wrap">
-    <div id="trajets-list" class="trajets-grid">
-      <p class="loading">Chargement des trajets…</p>
+    <div class="trajets-columns">
+      <div class="trajets-col">
+        <h2>Aller</h2>
+        <div id="trajets-aller" class="trajets-list"></div>
+      </div>
+      <div class="trajets-col">
+        <h2>Retour</h2>
+        <div id="trajets-retour" class="trajets-list"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -85,18 +92,23 @@
   const db  = getFirestore(app);
 
   let selectedTrajetId   = null;
-  let selectedTrajetData = null;
 
-  // Charger les trajets
+  // Charger les trajets et les séparer en Aller/Retour
   async function loadTrajets() {
-    const list = document.getElementById('trajets-list');
+    const allerList = document.getElementById('trajets-aller');
+    const retourList = document.getElementById('trajets-retour');
+    allerList.innerHTML = '<p class="loading">Chargement…</p>';
+    retourList.innerHTML = '<p class="loading">Chargement…</p>';
+
     try {
       const q = query(collection(db, 'navette_trajets'), orderBy('order'));
       const snap = await getDocs(q);
-      list.innerHTML = '';
+      allerList.innerHTML = '';
+      retourList.innerHTML = '';
 
       if (snap.empty) {
-        list.innerHTML = '<p class="error-msg">Aucun trajet trouvé.</p>';
+        allerList.innerHTML = '<p class="error-msg">Aucun trajet trouvé.</p>';
+        retourList.innerHTML = '<p class="error-msg">Aucun trajet trouvé.</p>';
         return;
       }
 
@@ -105,12 +117,13 @@
         const placesRestantes = t.placesRestantes ?? 8;
         const complet = placesRestantes <= 0;
 
+        // On suppose que le champ "type" vaut "aller" ou "retour"
         const card = document.createElement('div');
         card.className = 'trajet-card' + (complet ? ' complet' : '');
         card.innerHTML = `
           <div class="trajet-heure">${t.heure}</div>
           <div class="trajet-route">${t.depart} → ${t.arrivee}</div>
-          <div class="trajet-notes">${t.notes}</div>
+          <div class="trajet-notes">${t.notes ?? ''}</div>
           <div class="trajet-places ${complet ? 'complet' : ''}">
             ${complet ? '🚫 Complet' : `🪑 ${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`}
           </div>
@@ -118,7 +131,12 @@
             Réserver
           </button>` : ''}
         `;
-        list.appendChild(card);
+
+        if (t.type === 'aller') {
+          allerList.appendChild(card);
+        } else if (t.type === 'retour') {
+          retourList.appendChild(card);
+        }
       });
 
       // Boutons réserver
@@ -137,8 +155,8 @@
       });
 
     } catch(e) {
-      console.error('Erreur Firestore :', e);
-      list.innerHTML = '<p class="error-msg">Erreur : ' + e.message + '</p>';
+      allerList.innerHTML = '<p class="error-msg">Erreur : ' + e.message + '</p>';
+      retourList.innerHTML = '<p class="error-msg">Erreur : ' + e.message + '</p>';
     }
   }
 
@@ -182,7 +200,6 @@
       loadTrajets();
 
     } catch(e) {
-      console.error('Erreur réservation :', e);
       document.getElementById('modal-error').textContent = '❌ ' + e.message;
       document.getElementById('modal-error').style.display = 'block';
     }
@@ -199,4 +216,5 @@
 </script>
 </body>
 </html>
+
 
