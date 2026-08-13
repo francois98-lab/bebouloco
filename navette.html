@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Notre mariage</title>
+<title>Navette — Notre mariage</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -17,33 +17,48 @@
   <div class="nav">
     <div class="brand">Notre mariage</div>
     <nav class="nav-links">
-      <a href="index.html" class="active">Accueil</a>
-      <a href="navette.html">Navette</a>
+      <a href="index.html">Accueil</a>
+      <a href="navette.html" class="active">Navette</a>
       <a href="cadeaux.html">Cadeaux</a>
     </nav>
   </div>
 </header>
 
-<section class="hero">
+<section class="page-hero">
   <div class="hero-inner">
-    <svg class="branch" viewBox="0 0 220 34" fill="none" aria-hidden="true">
-      <path d="M10,17 C60,4 90,30 110,17 C130,4 160,30 210,17" stroke="#F0C25E" stroke-width="1.2"/>
-      <ellipse cx="35" cy="10" rx="6" ry="2.6" fill="#5C7A45" transform="rotate(-20 35 10)"/>
-      <ellipse cx="70" cy="26" rx="6" ry="2.6" fill="#B23A2E" transform="rotate(20 70 26)"/>
-      <ellipse cx="150" cy="8" rx="6" ry="2.6" fill="#5C7A45" transform="rotate(-15 150 8)"/>
-      <ellipse cx="185" cy="27" rx="6" ry="2.6" fill="#E0A726" transform="rotate(18 185 27)"/>
-      <circle cx="110" cy="17" r="3.4" fill="#2F5A82"/>
-    </svg>
-    <p class="eyebrow">Toutes les infos pratiques pour le grand jour</p>
-    <h1>Bienvenue !</h1>
-    <p class="hero-subtitle">Retrouvez ici les horaires de la navette pour rejoindre la fête, ainsi que notre liste de cadeaux. Chaque cadeau réservé disparaît de la liste pour que deux personnes ne se retrouvent pas avec le même présent.</p>
-    <div class="hero-cta">
-      <a href="navette.html"><button class="btn-primary">Voir la navette</button></a>
-      <a href="cadeaux.html"><button class="btn-ghost">Voir les cadeaux</button></a>
-    </div>
-    <p class="hero-date">Avec amour, à très vite le jour J.</p>
+    <p class="eyebrow">Organisez votre trajet</p>
+    <h1>La navette</h1>
+    <p class="hero-subtitle">Réservez votre place dans la navette pour rejoindre le château. Les places sont limitées !</p>
   </div>
 </section>
+
+<section class="trajets-section">
+  <div class="wrap">
+    <div id="trajets-list" class="trajets-grid">
+      <p class="loading">Chargement des trajets…</p>
+    </div>
+  </div>
+</section>
+
+<!-- Modal réservation -->
+<div class="modal-overlay" id="modal" style="display:none">
+  <div class="modal">
+    <button class="modal-close" id="modal-close">✕</button>
+    <h2>Réserver une place</h2>
+    <p id="modal-trajet-info" class="modal-info"></p>
+    <form id="reservation-form">
+      <label>Votre nom complet
+        <input type="text" id="input-name" placeholder="Ex : Marie Dupont" required maxlength="40">
+      </label>
+      <label>Nombre de places
+        <input type="number" id="input-guests" min="1" max="4" value="1" required>
+      </label>
+      <button type="submit" class="btn-primary">Confirmer la réservation</button>
+    </form>
+    <p id="modal-success" class="success-msg" style="display:none">✅ Réservation confirmée !</p>
+    <p id="modal-error" class="error-msg" style="display:none">❌ Une erreur est survenue.</p>
+  </div>
+</div>
 
 <footer>
   <div class="wrap">
@@ -52,12 +67,99 @@
   </div>
 </footer>
 
-<script>
-  window.addEventListener('scroll',()=>{
-    const el=document.getElementById('scroll-line');
-    const pct=window.scrollY/(document.body.scrollHeight-window.innerHeight)*100;
-    el.style.width=pct+'%';
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, orderBy }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDpDr29d3kz5_4PYTe7xnAFWOtjaWCaTCY",
+    authDomain:        "lesbebouslocos.firebaseapp.com",
+    projectId:         "lesbebouslocos",
+    storageBucket:     "lesbebouslocos.firebasestorage.app",
+    messagingSenderId: "498635002834",
+    appId:             "1:498635002834:web:786eb34d0b78a7ab442e0b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  let selectedTrajetId = null;
+
+  // Charger les trajets
+  async function loadTrajets() {
+    const list = document.getElementById('trajets-list');
+    try {
+      const q = query(collection(db, 'navette_trajets'), orderBy('order'));
+      const snap = await getDocs(q);
+      list.innerHTML = '';
+
+      snap.forEach(doc => {
+        const t = doc.data();
+        const card = document.createElement('div');
+        card.className = 'trajet-card';
+        card.innerHTML = `
+          <div class="trajet-heure">${t.heure}</div>
+          <div class="trajet-route">${t.depart} → ${t.arrivee}</div>
+          <div class="trajet-notes">${t.notes}</div>
+          <button class="btn-primary trajet-btn" data-id="${doc.id}" data-info="${t.heure} — ${t.depart} → ${t.arrivee}">
+            Réserver
+          </button>
+        `;
+        list.appendChild(card);
+      });
+
+      // Boutons réserver
+      document.querySelectorAll('.trajet-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedTrajetId = btn.dataset.id;
+          document.getElementById('modal-trajet-info').textContent = btn.dataset.info;
+          document.getElementById('modal').style.display = 'flex';
+          document.getElementById('modal-success').style.display = 'none';
+          document.getElementById('modal-error').style.display = 'none';
+          document.getElementById('reservation-form').style.display = 'block';
+        });
+      });
+
+    } catch(e) {
+      list.innerHTML = '<p class="error-msg">Impossible de charger les trajets.</p>';
+    }
+  }
+
+  // Fermer modal
+  document.getElementById('modal-close').addEventListener('click', () => {
+    document.getElementById('modal').style.display = 'none';
   });
+
+  // Soumettre réservation
+  document.getElementById('reservation-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name   = document.getElementById('input-name').value.trim();
+    const guests = parseInt(document.getElementById('input-guests').value);
+
+    try {
+      await addDoc(collection(db, 'navette_reservations'), {
+        trajetId:  selectedTrajetId,
+        name:      name,
+        guests:    guests,
+        createdAt: serverTimestamp()
+      });
+      document.getElementById('modal-success').style.display = 'block';
+      document.getElementById('reservation-form').style.display = 'none';
+      document.getElementById('modal-error').style.display = 'none';
+    } catch(e) {
+      document.getElementById('modal-error').style.display = 'block';
+    }
+  });
+
+  // Scroll line
+  window.addEventListener('scroll', () => {
+    const el  = document.getElementById('scroll-line');
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    el.style.width = pct + '%';
+  });
+
+  loadTrajets();
 </script>
 </body>
 </html>
