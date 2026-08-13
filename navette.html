@@ -94,6 +94,11 @@
       const snap = await getDocs(q);
       list.innerHTML = '';
 
+      if (snap.empty) {
+        list.innerHTML = '<p class="error-msg">Aucun trajet trouvé.</p>';
+        return;
+      }
+
       snap.forEach(doc => {
         const t = doc.data();
         const card = document.createElement('div');
@@ -122,7 +127,8 @@
       });
 
     } catch(e) {
-      list.innerHTML = '<p class="error-msg">Impossible de charger les trajets.</p>';
+      console.error('Erreur Firestore :', e);
+      list.innerHTML = '<p class="error-msg">Erreur : ' + e.message + '</p>';
     }
   }
 
@@ -148,6 +154,7 @@
       document.getElementById('reservation-form').style.display = 'none';
       document.getElementById('modal-error').style.display = 'none';
     } catch(e) {
+      console.error('Erreur réservation :', e);
       document.getElementById('modal-error').style.display = 'block';
     }
   });
@@ -163,3 +170,4 @@
 </script>
 </body>
 </html>
+
