@@ -58,12 +58,16 @@
     <h2>Réserver une place</h2>
     <p id="modal-trajet-info" class="modal-info"></p>
     <form id="reservation-form">
-      <label>Votre nom complet
-        <input type="text" id="input-name" placeholder="Ex : Marie Dupont" required maxlength="40">
-      </label>
-      <label>Nombre de places
-        <input type="number" id="input-guests" min="1" max="8" value="1" required>
-      </label>
+      <label>Nombre de places</label>
+      <div class="guests-counter">
+        <button type="button" id="btn-minus" class="counter-btn">−</button>
+        <span id="guests-display">1</span>
+        <button type="button" id="btn-plus" class="counter-btn">+</button>
+      </div>
+      <input type="hidden" id="input-guests" value="1">
+
+      <div id="guests-fields"></div>
+
       <button type="submit" class="btn-primary">Confirmer la réservation</button>
     </form>
     <p id="modal-success" class="success-msg" style="display:none">✅ Réservation confirmée !</p>
@@ -97,7 +101,40 @@
 
   let selectedTrajetId = null;
 
-  // Charger les trajets
+  // ─── Génère les champs nom/prénom selon le nombre de personnes ───
+  function renderGuestFields(count) {
+    const container = document.getElementById('guests-fields');
+
+    // Sauvegarder les valeurs déjà saisies
+    const existing = [...container.querySelectorAll('.guest-block')].map(block => ({
+      prenom: block.querySelector('.input-prenom').value,
+      nom:    block.querySelector('.input-nom').value,
+    }));
+
+    container.innerHTML = '';
+
+    for (let i = 0; i < count; i++) {
+      const block = document.createElement('div');
+      block.className = 'guest-block';
+      block.innerHTML = `
+        <p class="guest-label">Personne ${i + 1}</p>
+        <label>Prénom
+          <input type="text" class="input-prenom" placeholder="Ex : Marie" required maxlength="40">
+        </label>
+        <label>Nom
+          <input type="text" class="input-nom" placeholder="Ex : Dupont" required maxlength="40">
+        </label>
+      `;
+      // Restaurer les valeurs si elles existaient
+      if (existing[i]) {
+        block.querySelector('.input-prenom').value = existing[i].prenom;
+        block.querySelector('.input-nom').value    = existing[i].nom;
+      }
+      container.appendChild(block);
+    }
+  }
+
+  // ─── Charger les trajets ───
   async function loadTrajets() {
     const allerList  = document.getElementById('trajets-aller');
     const retourList = document.getElementById('trajets-retour');
@@ -152,18 +189,57 @@
         }
       });
 
-      // Boutons réserver
+      // ─── Boutons réserver ───
       document.querySelectorAll('.trajet-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           selectedTrajetId = btn.dataset.id;
           const placesRestantes = parseInt(btn.dataset.places);
-          document.getElementById('modal-trajet-info').textContent = btn.dataset.info;
-          document.getElementById('input-guests').max   = placesRestantes;
-          document.getElementById('input-guests').value = 1;
-          document.getElementById('modal').style.display = 'flex';
-          document.getElementById('modal-success').style.display = 'none';
-          document.getElementById('modal-error').style.display   = 'none';
-          document.getElementById('reservation-form').style.display = 'block';
+
+          document.getElementById('modal-trajet-info').textContent    = btn.dataset.info;
+          document.getElementById('input-guests').value               = 1;
+          document.getElementById('guests-display').textContent       = 1;
+          document.getElementById('modal').style.display              = 'flex';
+          document.getElementById('modal-success').style.display      = 'none';
+          document.getElementById('modal-error').style.display        = 'none';
+          document.getElementById('reservation-form').style.display   = 'block';
+
+          // Générer 1 champ au départ
+          renderGuestFields(1);
+
+          // Cloner les boutons pour éviter les doublons d'écouteurs
+          const btnMinus = document.getElementById('btn-minus');
+          const btnPlus  = document.getElementById('btn-plus');
+          const newMinus = btnMinus.cloneNode(true);
+          const newPlus  = btnPlus.cloneNode(true);
+          btnMinus.replaceWith(newMinus);
+          btnPlus.replaceWith(newPlus);
+
+          newMinus.disabled = true;
+          if (placesRestantes === 1) newPlus.disabled = true;
+
+          newPlus.addEventListener('click', () => {
+            let val = parseInt(document.getElementById('input-guests').value);
+            if (val < placesRestantes) {
+              val++;
+              document.getElementById('input-guests').value        = val;
+              document.getElementById('guests-display').textContent = val;
+              newMinus.disabled = false;
+              if (val === placesRestantes) newPlus.disabled = true;
+              renderGuestFields(val);
+            }
+          });
+
+          newMinus.addEventListener('click', () => {
+            let val = parseInt(document.getElementById('input-guests').value);
+            if (val > 1) {
+              val--;
+              document.getElementById('input-guests').value        = val;
+              document.getElementById('guests-display').textContent = val;
+              newPlus.disabled = false;
+              if (val === 1) newMinus.disabled = true;
+              renderGuestFields(val);
+            }
+          });
         });
       });
 
@@ -174,24 +250,38 @@
     }
   }
 
-  // Fermer modal en cliquant sur ✕
+  // ─── Fermer modal ✕ ───
   document.getElementById('modal-close').addEventListener('click', () => {
     document.getElementById('modal').style.display = 'none';
   });
 
-  // Fermer modal en cliquant en dehors
+  // ─── Fermer modal en cliquant en dehors ───
   document.getElementById('modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('modal')) {
       document.getElementById('modal').style.display = 'none';
     }
   });
 
-  // Soumettre réservation
+  // ─── Soumettre réservation ───
   document.getElementById('reservation-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name   = document.getElementById('input-name').value.trim();
-    const guests = parseInt(document.getElementById('input-guests').value);
+    const guests    = parseInt(document.getElementById('input-guests').value);
     const trajetRef = doc(db, 'navette_trajets', selectedTrajetId);
+
+    // Récupérer tous les noms/prénoms
+    const guestBlocks = document.querySelectorAll('.guest-block');
+    const passagers = [...guestBlocks].map(block => ({
+      prenom: block.querySelector('.input-prenom').value.trim(),
+      nom:    block.querySelector('.input-nom').value.trim(),
+    }));
+
+    // Vérifier que tous les champs sont remplis
+    const incomplet = passagers.some(p => !p.prenom || !p.nom);
+    if (incomplet) {
+      document.getElementById('modal-error').textContent   = '❌ Merci de remplir tous les champs nom/prénom.';
+      document.getElementById('modal-error').style.display = 'block';
+      return;
+    }
 
     try {
       await runTransaction(db, async (transaction) => {
@@ -202,9 +292,9 @@
         if (guests > placesRestantes) throw new Error('Plus assez de places disponibles.');
 
         const nouvelleReservation = {
-          name:   name,
-          guests: guests,
-          date:   new Date().toISOString()
+          passagers: passagers,
+          guests:    guests,
+          date:      new Date().toISOString()
         };
 
         transaction.update(trajetRef, {
@@ -213,21 +303,20 @@
         });
       });
 
-      document.getElementById('modal-success').style.display      = 'block';
-      document.getElementById('reservation-form').style.display   = 'none';
-      document.getElementById('modal-error').style.display        = 'none';
+      document.getElementById('modal-success').style.display    = 'block';
+      document.getElementById('reservation-form').style.display = 'none';
+      document.getElementById('modal-error').style.display      = 'none';
 
-      // Recharger les trajets pour mettre à jour les places
       loadTrajets();
 
     } catch(e) {
       console.error('Erreur réservation :', e);
-      document.getElementById('modal-error').textContent    = '❌ ' + e.message;
-      document.getElementById('modal-error').style.display  = 'block';
+      document.getElementById('modal-error').textContent   = '❌ ' + e.message;
+      document.getElementById('modal-error').style.display = 'block';
     }
   });
 
-  // Scroll line
+  // ─── Scroll line ───
   window.addEventListener('scroll', () => {
     const el  = document.getElementById('scroll-line');
     const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
