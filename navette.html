@@ -117,17 +117,11 @@
 <script type="module">
   import { db } from './firebase-config.js';
   import {
-    collection, getDocs, doc, arrayUnion, query, orderBy, runTransaction
+    collection, doc, getDocs, query, orderBy,
+    runTransaction, serverTimestamp
   } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-  import { initScrollLine, initMobileMenu, initScrollTop, escapeHTML, isValidName, cleanInput, setupModal } from './main.js';
 
-  initScrollLine();
-  initMobileMenu();
-  initScrollTop();
-
-  const modalCtrl = setupModal(document.getElementById('modal'));
   let selectedTrajetId = null;
-  let isSubmitting = false;
 
   function renderGuestFields(count) {
     const container = document.getElementById('guests-fields');
@@ -158,12 +152,12 @@
     }
   }
 
+  // ─── Charger les trajets + leurs passagers (sous-collection) ───
   async function loadTrajets() {
     const allerList  = document.getElementById('trajets-aller');
     const retourList = document.getElementById('trajets-retour');
-    const loadingHTML = '<div class="loading"><div class="spinner"></div>Chargement…</div>';
-    allerList.innerHTML  = loadingHTML;
-    retourList.innerHTML = loadingHTML;
+    allerList.innerHTML  = '<p class="loading">Chargement…</p>';
+    retourList.innerHTML = '<p class="loading">Chargement…</p>';
 
     try {
       const q    = query(collection(db, 'navette_trajets'), orderBy('order'));
@@ -177,66 +171,63 @@
         return;
       }
 
-      snap.forEach(docSnap => {
-        const t = docSnap.data();
+      // ─── Pour chaque trajet, on va aussi chercher ses réservations (sous-collection) ───
+      const trajetsAvecPassagers = await Promise.all(
+        snap.docs.map(async (docSnap) => {
+          const t = docSnap.data();
+          const resaSnap = await getDocs(collection(db, 'navette_trajets', docSnap.id, 'reservations'));
+          const passagers = resaSnap.docs
+            .flatMap(r => r.data().passagers ?? [])
+            .map(p => `${p.prenom} ${p.nom}`.trim());
+          return { id: docSnap.id, ...t, passagersAffiches: passagers };
+        })
+      );
+
+      trajetsAvecPassagers.forEach(t => {
         const placesRestantes = t.placesRestantes ?? 8;
         const complet = placesRestantes <= 0;
 
-        const reservations = t.reservations ?? [];
-        const passagersAffiches = reservations
-          .flatMap(r => r.passagers ?? [])
-          .map(p => `${p.prenom} ${p.nom}`.trim());
-
-        const listePassagersHTML = passagersAffiches.length
+        const listePassagersHTML = t.passagersAffiches.length
           ? `<div class="trajet-passagers">
                <p class="trajet-passagers-label">👥 Déjà inscrits</p>
-               <ul>${passagersAffiches.map(nom => `<li>${escapeHTML(nom)}</li>`).join('')}</ul>
+               <ul>${t.passagersAffiches.map(nom => `<li>${nom}</li>`).join('')}</ul>
              </div>`
           : '';
-
-        const heure   = escapeHTML(t.heure || '');
-        const depart  = escapeHTML(t.depart || '');
-        const arrivee = escapeHTML(t.arrivee || '');
-        const notes   = escapeHTML(t.notes || '');
-        const info    = escapeHTML(`${t.heure} — ${t.depart} → ${t.arrivee}`);
 
         const card = document.createElement('div');
         card.className = 'trajet-card' + (complet ? ' complet' : '');
         card.innerHTML = `
-          <div class="trajet-heure">${heure}</div>
-          <div class="trajet-route">${depart} → ${arrivee}</div>
-          <div class="trajet-notes">${notes}</div>
+          <div class="trajet-heure">${t.heure}</div>
+          <div class="trajet-route">${t.depart} → ${t.arrivee}</div>
+          <div class="trajet-notes">${t.notes ?? ''}</div>
           <div class="trajet-places ${complet ? 'complet' : ''}">
             ${complet ? '🚫 Complet' : `🪑 ${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`}
           </div>
           ${listePassagersHTML}
           ${!complet ? `
-            <button class="trajet-btn" data-id="${docSnap.id}" data-info="${info}" data-places="${placesRestantes}">
+            <button class="trajet-btn" data-id="${t.id}" data-info="${t.heure} — ${t.depart} → ${t.arrivee}" data-places="${placesRestantes}">
               Réserver
             </button>` : ''}
         `;
 
-        const type = t.type === 'retour' || t.type === 'aller'
-          ? t.type
-          : (String(t.depart || '').toLowerCase().includes('château') ? 'retour' : 'aller');
-
+        const type = t.depart.toLowerCase().includes('château') ? 'retour' : 'aller';
         (type === 'retour' ? retourList : allerList).appendChild(card);
       });
 
       document.querySelectorAll('.trajet-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           selectedTrajetId = btn.dataset.id;
-          const placesRestantes = parseInt(btn.dataset.places, 10);
+          const placesRestantes = parseInt(btn.dataset.places);
 
-          document.getElementById('modal-trajet-info').textContent  = btn.dataset.info;
-          document.getElementById('input-guests').value             = 1;
-          document.getElementById('guests-display').textContent     = 1;
-          document.getElementById('modal-success').style.display    = 'none';
-          document.getElementById('modal-error').style.display      = 'none';
-          document.getElementById('reservation-form').style.display = 'block';
+          document.getElementById('modal-trajet-info').textContent    = btn.dataset.info;
+          document.getElementById('input-guests').value               = 1;
+          document.getElementById('guests-display').textContent       = 1;
+          document.getElementById('modal').style.display              = 'flex';
+          document.getElementById('modal-success').style.display      = 'none';
+          document.getElementById('modal-error').style.display        = 'none';
+          document.getElementById('reservation-form').style.display   = 'block';
 
           renderGuestFields(1);
-          modalCtrl.open(btn);
 
           const btnMinus = document.getElementById('btn-minus');
           const btnPlus  = document.getElementById('btn-plus');
@@ -249,7 +240,7 @@
           if (placesRestantes === 1) newPlus.disabled = true;
 
           newPlus.addEventListener('click', () => {
-            let val = parseInt(document.getElementById('input-guests').value, 10);
+            let val = parseInt(document.getElementById('input-guests').value);
             if (val < placesRestantes) {
               val++;
               document.getElementById('input-guests').value        = val;
@@ -261,7 +252,7 @@
           });
 
           newMinus.addEventListener('click', () => {
-            let val = parseInt(document.getElementById('input-guests').value, 10);
+            let val = parseInt(document.getElementById('input-guests').value);
             if (val > 1) {
               val--;
               document.getElementById('input-guests').value        = val;
@@ -276,72 +267,81 @@
 
     } catch (e) {
       console.error('Erreur Firestore :', e);
-      allerList.innerHTML  = '<p class="error-msg">Une erreur est survenue lors du chargement.</p>';
-      retourList.innerHTML = '<p class="error-msg">Une erreur est survenue lors du chargement.</p>';
+      allerList.innerHTML  = '<p class="error-msg">Erreur : ' + e.message + '</p>';
+      retourList.innerHTML = '<p class="error-msg">Erreur : ' + e.message + '</p>';
     }
   }
 
-  document.getElementById('modal-close').addEventListener('click', modalCtrl.close);
+  document.getElementById('modal-close').addEventListener('click', () => {
+    document.getElementById('modal').style.display = 'none';
+  });
 
   document.getElementById('reservation-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-
-    const guests    = parseInt(document.getElementById('input-guests').value, 10);
-    const trajetRef = doc(db, 'navette_trajets', selectedTrajetId);
+    const guests    = parseInt(document.getElementById('input-guests').value);
     const guestBlocks = document.querySelectorAll('.guest-block');
-    const errorEl = document.getElementById('modal-error');
-    const submitBtn = document.getElementById('submit-btn');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
 
     const passagersInput = [...guestBlocks].map(block => ({
-      prenom: cleanInput(block.querySelector('.input-prenom').value),
-      nom:    cleanInput(block.querySelector('.input-nom').value),
+      prenom:     block.querySelector('.input-prenom').value.trim(),
+      nomComplet: block.querySelector('.input-nom').value.trim(),
     }));
 
-    const invalide = passagersInput.some(p => !isValidName(p.prenom) || !isValidName(p.nom));
-    if (invalide) {
-      errorEl.textContent   = '❌ Merci de renseigner un nom et un prénom valides (2 à 40 caractères).';
-      errorEl.style.display = 'block';
+    const incomplet = passagersInput.some(p => !p.prenom || !p.nomComplet);
+    if (incomplet) {
+      document.getElementById('modal-error').textContent   = '❌ Merci de remplir tous les champs nom/prénom.';
+      document.getElementById('modal-error').style.display = 'block';
       return;
     }
 
     const passagers = passagersInput.map(p => ({
       prenom: p.prenom,
-      nom:    p.nom.charAt(0).toUpperCase() + '.'
+      nom:    p.nomComplet.charAt(0).toUpperCase() + '.'
     }));
 
-    isSubmitting = true;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Envoi en cours…';
-    errorEl.style.display = 'none';
 
     try {
+      // ─── Transaction atomique : crée la réservation ET décrémente les places, ensemble ───
       await runTransaction(db, async (transaction) => {
+        const trajetRef = doc(db, 'navette_trajets', selectedTrajetId);
         const trajetDoc = await transaction.get(trajetRef);
         if (!trajetDoc.exists()) throw new Error('Trajet introuvable.');
 
         const placesRestantes = trajetDoc.data().placesRestantes ?? 8;
         if (guests > placesRestantes) throw new Error('Plus assez de places disponibles.');
 
-        transaction.update(trajetRef, {
-          placesRestantes: placesRestantes - guests,
-          reservations: arrayUnion({ passagers, guests, date: new Date().toISOString() })
+        const resaRef = doc(collection(db, 'navette_trajets', selectedTrajetId, 'reservations'));
+        transaction.set(resaRef, {
+          passagers,
+          guests,
+          date: serverTimestamp()
         });
+
+        transaction.update(trajetRef, { placesRestantes: placesRestantes - guests });
       });
 
       document.getElementById('modal-success').style.display    = 'block';
       document.getElementById('reservation-form').style.display = 'none';
+      document.getElementById('modal-error').style.display      = 'none';
+
       loadTrajets();
 
     } catch (e) {
       console.error('Erreur réservation :', e);
-      errorEl.textContent   = '❌ ' + (e.message || 'Une erreur est survenue.');
-      errorEl.style.display = 'block';
+      document.getElementById('modal-error').textContent   = '❌ ' + e.message;
+      document.getElementById('modal-error').style.display = 'block';
     } finally {
-      isSubmitting = false;
       submitBtn.disabled = false;
       submitBtn.textContent = 'Confirmer la réservation';
     }
+  });
+
+  window.addEventListener('scroll', () => {
+    const el  = document.getElementById('scroll-line');
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    el.style.width = pct + '%';
   });
 
   loadTrajets();
