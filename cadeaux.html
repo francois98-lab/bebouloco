@@ -56,11 +56,13 @@
         <input type="text" id="input-nom" placeholder="Ex : Dupont" required maxlength="40">
       </label>
 
-      <label class="checkbox-label">
-        <input type="checkbox" id="input-afficher" checked>
-        <span>Afficher mon nom sur le site</span>
-      </label>
-      <p class="checkbox-hint">Si décoché, votre nom restera visible uniquement pour les mariés.</p>
+      <div id="afficher-nom-wrap">
+        <label class="checkbox-label">
+          <input type="checkbox" id="input-afficher" checked>
+          <span>Afficher mon nom sur le site</span>
+        </label>
+        <p class="checkbox-hint">Si décoché, votre nom restera visible uniquement pour les mariés.</p>
+      </div>
 
       <button type="submit" class="btn-primary" id="modal-submit-btn">Confirmer</button>
     </form>
@@ -128,9 +130,15 @@
     document.getElementById('cadeau-form').style.display          = 'block';
     document.getElementById('modal-cadeau-success').style.display = 'none';
     document.getElementById('modal-cadeau-error').style.display   = 'none';
-    document.getElementById('modal-submit-btn').textContent       =
+
+    // Affiche la case "Afficher mon nom" uniquement pour les cadeaux classiques
+    document.getElementById('afficher-nom-wrap').style.display =
+      giftType === 'cagnotte' ? 'none' : 'block';
+
+    document.getElementById('modal-submit-btn').textContent =
       giftType === 'cagnotte' ? 'Continuer vers le paiement' : 'Confirmer';
-    document.getElementById('modal-cadeau').style.display         = 'flex';
+
+    document.getElementById('modal-cadeau').style.display = 'flex';
   }
 
   // ─── Fermer la modal ✕ ───
@@ -149,9 +157,8 @@
   document.getElementById('cadeau-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const prenom   = sanitize(document.getElementById('input-prenom').value);
-    const nom      = sanitize(document.getElementById('input-nom').value);
-    const afficher = document.getElementById('input-afficher').checked;
+    const prenom = sanitize(document.getElementById('input-prenom').value);
+    const nom    = sanitize(document.getElementById('input-nom').value);
 
     if (prenom.length < 2 || nom.length < 2) {
       document.getElementById('modal-cadeau-error').textContent   = '❌ Prénom et nom doivent faire au moins 2 caractères.';
@@ -159,8 +166,14 @@
       return;
     }
 
-    const fullName    = `${prenom} ${nom}`;
-    const displayName = afficher ? fullName : 'anonyme';
+    const fullName = `${prenom} ${nom}`;
+
+    // Pour une cagnotte : nom toujours affiché
+    // Pour un cadeau classique : selon la case cochée
+    const afficher    = document.getElementById('input-afficher').checked;
+    const displayName = selectedGiftType === 'cagnotte'
+      ? fullName
+      : (afficher ? fullName : 'anonyme');
 
     try {
       if (selectedGiftType === 'cagnotte') {
@@ -315,5 +328,4 @@
 </script>
 </body>
 </html>
-
 
