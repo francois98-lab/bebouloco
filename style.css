@@ -80,41 +80,83 @@ section{padding:72px 0;}
 .section-head h2{font-size:clamp(26px,4vw,38px);margin-bottom:10px;}
 .section-head p{color:var(--ink-2);font-weight:300;font-size:15px;line-height:1.8;}
 
-/* PROGRAMME (frise verticale) */
+/* PROGRAMME (deux colonnes Samedi / Dimanche) */
 .programme{background:var(--stone);}
+
+.programme-columns{
+  display:flex;
+  gap:32px;
+  justify-content:center;
+  align-items:flex-start;
+  flex-wrap:wrap;
+}
+
+.programme-col{
+  flex:1 1 320px;
+  max-width:440px;
+}
+
+.programme-day{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  text-align:center;
+  color:var(--ink-2);
+  margin-bottom:18px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--line);
+}
+
 .timeline{
-  max-width:640px;margin:0 auto;
   background:var(--surface);
   border:1px solid var(--line);
   border-radius:var(--radius);
-  padding:8px 32px;
+  padding:8px 28px;
   box-shadow:var(--shadow-sm);
+  height:100%;
 }
+
 .timeline-item{
-  display:flex;align-items:center;gap:20px;
+  display:flex;align-items:center;gap:18px;
   padding:16px 0;border-bottom:1px solid var(--line);
   transition:background 0.25s;
 }
 .timeline-item:last-child{border-bottom:none;}
 .timeline-item:hover{background:rgba(224,167,38,0.05);}
+
 .timeline-time{
   font-family:'IBM Plex Mono',monospace;font-size:13px;
-  color:var(--terracotta-deep);width:64px;flex-shrink:0;
+  color:var(--terracotta-deep);width:56px;flex-shrink:0;
   letter-spacing:0.03em;
 }
+
 .timeline-dot{
   width:8px;height:8px;border-radius:50%;
   background:var(--gentiane);flex-shrink:0;
 }
+
 .timeline-label{
-  font-family:'Cormorant Garamond',serif;font-size:19px;
+  font-family:'Cormorant Garamond',serif;font-size:18px;
   color:var(--ink);font-weight:500;
 }
+
+/* Distinction subtile entre les deux jours via la couleur du point */
+.timeline--samedi .timeline-dot{background:var(--gentiane);}
+.timeline--dimanche .timeline-dot{background:var(--terracotta-deep);}
+
+@media(max-width:900px){
+  .programme-columns{flex-direction:column;align-items:center;}
+  .programme-col{width:100%;max-width:560px;}
+}
+
 @media(max-width:480px){
   .timeline{padding:8px 20px;}
   .timeline-item{flex-wrap:wrap;row-gap:4px;}
   .timeline-time{width:auto;}
 }
+
 
 /* LIEU */
 .lieu{background:var(--surface);}
