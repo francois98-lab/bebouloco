@@ -18,7 +18,7 @@
     <div class="brand">Notre mariage</div>
     <nav class="nav-links">
       <a href="index.html" class="active">Accueil</a>
-      <a href="navette.html">Navette</a>
+      <a href="navette.html">Logement & navette</a>
       <a href="cadeaux.html">Cadeaux</a>
     </nav>
   </div>
@@ -26,6 +26,11 @@
 
 <section class="hero">
   <div class="hero-inner">
+
+    <div class="hero-photo">
+      <img src="images/couple.jpg" alt="Photo des mariés" loading="lazy">
+    </div>
+
     <svg class="branch" viewBox="0 0 220 34" fill="none" aria-hidden="true">
       <path d="M10,17 C60,4 90,30 110,17 C130,4 160,30 210,17" stroke="#F0C25E" stroke-width="1.2"/>
       <ellipse cx="35" cy="10" rx="6" ry="2.6" fill="#5C7A45" transform="rotate(-20 35 10)"/>
@@ -34,16 +39,18 @@
       <ellipse cx="185" cy="27" rx="6" ry="2.6" fill="#E0A726" transform="rotate(18 185 27)"/>
       <circle cx="110" cy="17" r="3.4" fill="#2F5A82"/>
     </svg>
-    <p class="eyebrow">Toutes les infos pratiques pour le grand jour</p>
+
+    <p class="eyebrow">On se marie, et on a hâte de le fêter avec vous 🤍</p>
     <h1>Bienvenue !</h1>
     <p class="hero-subtitle">
-      Retrouvez ici les horaires de la navette, notre liste de cadeaux, et le programme de la journée.<br>
+      Cette petite page a été pensée pour vous accompagner jusqu'au grand jour : les infos pour dormir sur place, la navette, notre liste de cadeaux, et tout le programme de la journée.<br>
+      On a tellement hâte de vous voir et partager ce beau moment avec vous !
     </p>
     <div class="hero-cta">
-      <a href="navette.html"><button class="btn-primary">Voir la navette</button></a>
+      <a href="navette.html"><button class="btn-primary">Logement & navette</button></a>
       <a href="cadeaux.html"><button class="btn-ghost">Voir les cadeaux</button></a>
     </div>
-    <p class="hero-date">Avec amour, à très vite le jour J.</p>
+    <p class="hero-date">Avec amour, à très vite le jour J. 💍</p>
   </div>
 </section>
 
@@ -58,41 +65,41 @@
 
       <!-- Colonne Samedi -->
       <div class="programme-col">
-        <h3 class="programme-day">Samedi</h3>
+        <h3 class="programme-day">🎉 Samedi</h3>
         <div class="timeline timeline--samedi">
           <div class="timeline-item">
             <span class="timeline-time">15h30</span>
-            <span class="timeline-dot"></span>
+            <span class="timeline-icon">🚗</span>
             <span class="timeline-label">Arrivée des invités</span>
           </div>
           <div class="timeline-item">
             <span class="timeline-time">15h45</span>
-            <span class="timeline-dot"></span>
+            <span class="timeline-icon">💍</span>
             <span class="timeline-label">Début de la cérémonie</span>
           </div>
           <div class="timeline-item">
             <span class="timeline-time">17h00</span>
-            <span class="timeline-dot"></span>
+            <span class="timeline-icon">🥂</span>
             <span class="timeline-label">Cocktail</span>
           </div>
           <div class="timeline-item">
             <span class="timeline-time">19h00</span>
-            <span class="timeline-dot"></span>
+            <span class="timeline-icon">🍽️</span>
             <span class="timeline-label">Repas</span>
           </div>
           <div class="timeline-item">
             <span class="timeline-time">22h00</span>
-            <span class="timeline-dot"></span>
+            <span class="timeline-icon">💃</span>
             <span class="timeline-label">Soirée dansante</span>
           </div>
           <div class="timeline-item">
             <span class="timeline-time">4h00</span>
-            <span class="timeline-dot"></span>
+            <span class="timeline-icon">🌙</span>
             <span class="timeline-label">Fin de soirée</span>
           </div>
           <div class="timeline-item">
             <span class="timeline-time">4h30</span>
-            <span class="timeline-dot"></span>
+            <span class="timeline-icon">🚌</span>
             <span class="timeline-label">Dernier retour navette</span>
           </div>
         </div>
@@ -100,16 +107,16 @@
 
       <!-- Colonne Dimanche -->
       <div class="programme-col">
-        <h3 class="programme-day">Dimanche</h3>
+        <h3 class="programme-day">☀️ Dimanche</h3>
         <div class="timeline timeline--dimanche">
           <div class="timeline-item">
             <span class="timeline-time">11h00</span>
-            <span class="timeline-dot"></span>
+            <span class="timeline-icon">🥐</span>
             <span class="timeline-label">Brunch</span>
           </div>
           <div class="timeline-item">
             <span class="timeline-time">15h00</span>
-            <span class="timeline-dot"></span>
+            <span class="timeline-icon">👋</span>
             <span class="timeline-label">Fin du mariage</span>
           </div>
         </div>
@@ -119,7 +126,6 @@
   </div>
 </section>
 
-
 <section class="lieu">
   <div class="wrap">
     <div class="section-head">
@@ -128,10 +134,15 @@
       <p>Le mariage aura lieu au <strong>Château La Gallée</strong>, un domaine historique situé à Millery, à 20 minutes au sud de Lyon.</p>
     </div>
 
-    <div class="lieu-details">
-      <p><strong>Adresse :</strong> 1 Route de Saint-Andéol, 69390 Millery</p>
-      <p><strong>Accès :</strong> Un parking est disponible sur place. Une navette sera également mise à disposition depuis Lyon.</p>
-      <p><strong>À propos du château :</strong> Niché au cœur des vignes, le Château La Gallée offre un cadre élégant et convivial pour célébrer ensemble cette journée unique. Profitez des jardins, de la vue sur les monts du Lyonnais et de la salle de réception authentique.</p>
+    <div class="lieu-content">
+      <div class="lieu-photo">
+        <img src="images/chateau.jpg" alt="Château La Gallée" loading="lazy">
+      </div>
+      <div class="lieu-details">
+        <p>📍 <strong>Adresse :</strong> 1 Route de Saint-Andéol, 69390 Millery</p>
+        <p>🅿️ <strong>Accès :</strong> Un parking est disponible sur place. Une navette sera également mise à disposition depuis Lyon.</p>
+        <p>🏰 <strong>À propos du château :</strong> Niché au cœur des vignes, le Château La Gallée offre un cadre élégant et convivial pour célébrer ensemble cette journée unique. Profitez des jardins, de la vue sur les monts du Lyonnais et de la salle de réception authentique.</p>
+      </div>
     </div>
 
     <a href="https://www.chateaulagallee.com/" target="_blank" class="link-inline">
