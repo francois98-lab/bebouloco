@@ -10,7 +10,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2        # ← version récente compatible Node 24
 
       - name: Générer firebase-config.js
         run: |
@@ -32,7 +32,7 @@ jobs:
           EOF
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@v4.0.0   # ← version explicite
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
