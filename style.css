@@ -399,6 +399,8 @@ footer p{font-size:13px;margin:4px 0;position:relative;font-weight:300;}
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
   z-index: 1000;
 }
 .modal {
@@ -407,9 +409,14 @@ footer p{font-size:13px;margin:4px 0;position:relative;font-weight:300;}
   padding: 2rem 1.5rem 1.5rem 1.5rem;
   box-shadow: 0 4px 24px #0002;
   min-width: 320px;
-  max-width: 95vw;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;         /* limite la hauteur à 90% de l'écran */
+  overflow-y: auto;         /* ajoute un défilement interne si le contenu dépasse */
+  -webkit-overflow-scrolling: touch;
   position: relative;
   text-align: center;
+  box-sizing: border-box;
 }
 .modal-close {
   position: absolute;
