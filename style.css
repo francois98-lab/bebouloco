@@ -41,6 +41,13 @@ header{position:sticky;top:0;z-index:100;background:rgba(245,239,221,0.88);backd
 .hero-date{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#F0C25E;margin-top:28px;letter-spacing:0.08em;opacity:0.85;}
 .hero-cta{display:flex;gap:14px;justify-content:center;margin-top:36px;flex-wrap:wrap;}
 
+/* Harmonisation de la taille des boutons du hero */
+.hero-cta .btn-primary,
+.hero-cta .btn-ghost{
+  min-width:220px;
+  text-align:center;
+}
+
 /* PHOTO DES MARIÉS (hero) */
 .hero-photo{
   width:140px;height:140px;
