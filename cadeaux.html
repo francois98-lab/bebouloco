@@ -91,24 +91,36 @@
 <script type="module">
   import { db } from './firebase-config.js';
   import {
-    collection, onSnapshot, doc, query, orderBy, arrayUnion, runTransaction
+    collection, doc, onSnapshot,
+    query, orderBy, runTransaction, serverTimestamp
   } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-  import { initScrollLine, initMobileMenu, initScrollTop, observeFadeIns, escapeHTML, isValidName, cleanInput, setupModal } from './main.js';
 
-  initScrollLine();
-  initMobileMenu();
-  initScrollTop();
+  window.addEventListener('scroll', () => {
+    const el  = document.getElementById('scroll-line');
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    el.style.width = pct + '%';
+  });
 
-  const modalCtrl = setupModal(document.getElementById('modal-cadeau'));
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  function sanitize(str) {
+    return String(str).replace(/[<>"'&]/g, '').trim();
+  }
 
   const giftIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--terracotta-deep)" stroke-width="1.5" width="32" height="32"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M4 9l8-5 8 5"/><path d="M12 9v11"/></svg>`;
 
   let selectedGiftId   = null;
   let selectedGiftLink = null;
   let selectedGiftType = null;
-  let isSubmitting     = false;
 
-  function openModal(giftId, giftName, giftLink, giftType, triggerEl) {
+  function openModal(giftId, giftName, giftLink, giftType) {
     selectedGiftId   = giftId;
     selectedGiftLink = giftLink;
     selectedGiftType = giftType;
@@ -127,27 +139,33 @@
     document.getElementById('afficher-nom-wrap').style.display =
       giftType === 'cagnotte' ? 'none' : 'block';
 
+    document.getElementById('modal-submit-btn').disabled = false;
     document.getElementById('modal-submit-btn').textContent = 'Continuer vers le paiement';
-    document.getElementById('modal-submit-btn').disabled    = false;
 
-    modalCtrl.open(triggerEl);
+    document.getElementById('modal-cadeau').style.display = 'flex';
   }
 
-  document.getElementById('modal-cadeau-close').addEventListener('click', modalCtrl.close);
+  document.getElementById('modal-cadeau-close').addEventListener('click', () => {
+    document.getElementById('modal-cadeau').style.display = 'none';
+  });
+
+  document.getElementById('modal-cadeau').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modal-cadeau')) {
+      document.getElementById('modal-cadeau').style.display = 'none';
+    }
+  });
 
   document.getElementById('cadeau-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
 
+    const prenom = sanitize(document.getElementById('input-prenom').value);
+    const nom    = sanitize(document.getElementById('input-nom').value);
+    const submitBtn = document.getElementById('modal-submit-btn');
     const errorEl   = document.getElementById('modal-cadeau-error');
     const successEl = document.getElementById('modal-cadeau-success');
-    const submitBtn = document.getElementById('modal-submit-btn');
 
-    const prenom = cleanInput(document.getElementById('input-prenom').value);
-    const nom    = cleanInput(document.getElementById('input-nom').value);
-
-    if (!isValidName(prenom) || !isValidName(nom)) {
-      errorEl.textContent   = '❌ Merci de renseigner un nom et un prénom valides (2 à 40 caractères).';
+    if (prenom.length < 2 || nom.length < 2) {
+      errorEl.textContent   = '❌ Prénom et nom doivent faire au moins 2 caractères.';
       errorEl.style.display = 'block';
       return;
     }
@@ -158,7 +176,6 @@
       ? fullName
       : (afficher ? fullName : 'anonyme');
 
-    isSubmitting = true;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Envoi en cours…';
     errorEl.style.display = 'none';
@@ -167,21 +184,26 @@
       const giftRef = doc(db, 'cadeaux', selectedGiftId);
 
       if (selectedGiftType === 'cagnotte') {
+        // ─── Transaction : crée la contribution ET incrémente le compteur, atomiquement ───
         await runTransaction(db, async (tx) => {
           const snap = await tx.get(giftRef);
           if (!snap.exists()) throw new Error('Ce cadeau n\'existe plus.');
-          tx.update(giftRef, {
-            contributions: arrayUnion({
-              name: fullName,
-              displayName,
-              date: new Date().toISOString()   // ← garantit l'unicité de chaque entrée
-            })
+          const currentCount = snap.data().contributionsCount || 0;
+
+          const contribRef = doc(collection(db, 'cadeaux', selectedGiftId, 'contributions'));
+          tx.set(contribRef, {
+            name: fullName,
+            displayName,
+            date: serverTimestamp()
           });
+
+          tx.update(giftRef, { contributionsCount: currentCount + 1 });
         });
-      
+
         successEl.textContent = '✅ Merci ! Vous allez être redirigé(e) vers la page de paiement.';
+
       } else {
-        // Transaction pour éviter que deux invités réservent le même cadeau en même temps
+        // ─── Cadeau classique : un seul bénéficiaire possible ───
         await runTransaction(db, async (tx) => {
           const snap = await tx.get(giftRef);
           if (!snap.exists()) throw new Error('Ce cadeau n\'existe plus.');
@@ -206,7 +228,6 @@
       errorEl.textContent   = '❌ ' + (err.message || 'Une erreur est survenue. Réessayez.');
       errorEl.style.display = 'block';
     } finally {
-      isSubmitting = false;
       submitBtn.disabled = false;
       submitBtn.textContent = 'Continuer vers le paiement';
     }
@@ -239,18 +260,18 @@
 
     list.forEach(g => {
       const isCagnotte = g.type === 'cagnotte';
-      const safeName   = escapeHTML(g.name  || '');
-      const safeDesc   = escapeHTML(g.desc  || '');
-      const safePrice  = escapeHTML(g.price || '');
-      const safeLink   = escapeHTML(g.link  || '');
-      const safePhoto  = escapeHTML(g.photo || '');
+      const safeName   = sanitize(g.name  || '');
+      const safeDesc   = sanitize(g.desc  || '');
+      const safePrice  = sanitize(g.price || '');
+      const safeLink   = sanitize(g.link  || '');
+      const safePhoto  = sanitize(g.photo || '');
 
       let statusHtml = '';
       let buttonHtml = '';
 
       if (isCagnotte) {
-        const contributions = g.contributions || [];
-        const count = contributions.length;
+        // ─── Le compteur est lu directement depuis le document parent ───
+        const count = g.contributionsCount || 0;
 
         statusHtml = count > 0
           ? `<span class="gift-status">💶 ${count} participant${count > 1 ? 's' : ''} déjà contribué${count > 1 ? 's' : ''}</span>`
@@ -260,6 +281,7 @@
           <button class="btn-gift" data-id="${g.id}" data-name="${safeName}" data-link="${safeLink}" data-type="cagnotte">
             Participer
           </button>`;
+
       } else {
         const taken = !!g.takenBy;
         let takenLabel = '';
@@ -267,7 +289,7 @@
           const display = g.displayName || 'anonyme';
           takenLabel = display === 'anonyme'
             ? '✓ Offert anonymement'
-            : '✓ Offert par ' + escapeHTML(display);
+            : '✓ Offert par ' + sanitize(display);
         }
 
         statusHtml = `<span class="gift-status">${takenLabel}</span>`;
@@ -282,7 +304,7 @@
       card.innerHTML = `
         <div class="gift-photo">
           ${safePhoto
-            ? `<img src="${safePhoto}" alt="${safeName}" loading="lazy" onerror="this.parentElement.innerHTML='${giftIcon.replace(/'/g, "\\'")}'">`
+            ? `<img src="${safePhoto}" alt="${safeName}" loading="lazy">`
             : `<div class="gift-icon-wrap">${giftIcon}</div>`}
         </div>
         <div class="gift-body">
@@ -294,17 +316,13 @@
         </div>`;
 
       grid.appendChild(card);
+      observer.observe(card);
     });
-
-    observeFadeIns('.gift-card');
 
     grid.querySelectorAll('.btn-gift:not(.taken)').forEach(btn => {
       btn.addEventListener('click', () => {
-        openModal(btn.dataset.id, btn.dataset.name, btn.dataset.link, btn.dataset.type, btn);
+        openModal(btn.dataset.id, btn.dataset.name, btn.dataset.link, btn.dataset.type);
       });
     });
   });
 </script>
-</body>
-</html>
-
