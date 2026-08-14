@@ -240,4 +240,80 @@ footer p{font-size:13px;margin:4px 0;position:relative;font-weight:300;}
     width: 100%;
   }
 }
+/* ── Compteur + / − ── */
+.guests-counter {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin: 0.5rem 0 1.2rem;
+}
 
+.counter-btn {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: transparent;
+  font-size: 1.3rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.counter-btn:hover:not(:disabled) {
+  background: #000;
+  color: #fff;
+}
+
+.counter-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#guests-display {
+  font-size: 1.4rem;
+  font-weight: 600;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+/* ── Blocs par personne ── */
+.guest-block {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 0.8rem;
+  background: #fafafa;
+}
+
+.guest-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.6rem;
+  opacity: 0.5;
+}
+
+.guest-block label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.guest-block input {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.guest-block input:focus {
+  outline: none;
+  border-color: #888;
+}
