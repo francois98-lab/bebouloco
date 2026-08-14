@@ -41,6 +41,35 @@
   <p class="contact-note">Merci de tout cœur pour votre générosité.</p>
 </section>
 
+<!-- Modal cadeau -->
+<div class="modal-overlay" id="modal-cadeau" style="display:none">
+  <div class="modal">
+    <button class="modal-close" id="modal-cadeau-close">✕</button>
+    <h2>Offrir ce cadeau</h2>
+    <p id="modal-cadeau-info" class="modal-info"></p>
+
+    <form id="cadeau-form">
+      <label>Prénom
+        <input type="text" id="input-prenom" placeholder="Ex : Marie" required maxlength="40">
+      </label>
+      <label>Nom
+        <input type="text" id="input-nom" placeholder="Ex : Dupont" required maxlength="40">
+      </label>
+
+      <label class="checkbox-label">
+        <input type="checkbox" id="input-afficher" checked>
+        <span>Afficher mon nom sur le site</span>
+      </label>
+      <p class="checkbox-hint">Si décoché, votre nom restera visible uniquement pour les mariés.</p>
+
+      <button type="submit" class="btn-primary">Confirmer</button>
+    </form>
+
+    <p id="modal-cadeau-success" class="success-msg" style="display:none">✅ Merci pour votre générosité !</p>
+    <p id="modal-cadeau-error" class="error-msg" style="display:none">❌ Une erreur est survenue.</p>
+  </div>
+</div>
+
 <footer>
   <div class="wrap">
     <h3>Notre mariage</h3>
@@ -55,31 +84,113 @@
     updateDoc, query, orderBy
   } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-  window.addEventListener('scroll',()=>{
-    const el=document.getElementById('scroll-line');
-    const pct=window.scrollY/(document.body.scrollHeight-window.innerHeight)*100;
-    el.style.width=pct+'%';
+  // ─── Scroll line ───
+  window.addEventListener('scroll', () => {
+    const el  = document.getElementById('scroll-line');
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    el.style.width = pct + '%';
   });
 
-  const observer = new IntersectionObserver(entries=>{
-    entries.forEach((e,i)=>{
-      if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*80);observer.unobserve(e.target);}
+  // ─── Animations au scroll ───
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        observer.unobserve(e.target);
+      }
     });
-  },{threshold:0.1});
+  }, { threshold: 0.1 });
 
-  function sanitize(str){ return String(str).replace(/[<>"'&]/g,'').trim(); }
+  function sanitize(str) {
+    return String(str).replace(/[<>"'&]/g, '').trim();
+  }
 
-  const giftIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--terracotta-deep)" stroke-width="1.5" width="32" height="32"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M4 9l8-5 8 5"/><path d="M12 9v11"/></svg>`;
+  const giftIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--terracotta-deep)" stroke-width="1.5" width="32" height="32"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M4 9l8-5 8 5"/><path d="M12 9v11"/></svg>`;
 
-  onSnapshot(query(collection(db,'cadeaux'),orderBy('order','asc')), snap=>{
-    const list    = snap.docs.map(d=>({id:d.id,...d.data()}));
+  // ─── État de la modal ───
+  let selectedGiftId   = null;
+  let selectedGiftLink = null;
+
+  // ─── Ouvrir la modal ───
+  function openModal(giftId, giftName, giftLink) {
+    selectedGiftId   = giftId;
+    selectedGiftLink = giftLink;
+
+    document.getElementById('modal-cadeau-info').textContent      = giftName;
+    document.getElementById('input-prenom').value                 = '';
+    document.getElementById('input-nom').value                    = '';
+    document.getElementById('input-afficher').checked             = true;
+    document.getElementById('cadeau-form').style.display          = 'block';
+    document.getElementById('modal-cadeau-success').style.display = 'none';
+    document.getElementById('modal-cadeau-error').style.display   = 'none';
+    document.getElementById('modal-cadeau').style.display         = 'flex';
+  }
+
+  // ─── Fermer la modal ✕ ───
+  document.getElementById('modal-cadeau-close').addEventListener('click', () => {
+    document.getElementById('modal-cadeau').style.display = 'none';
+  });
+
+  // ─── Fermer en cliquant en dehors ───
+  document.getElementById('modal-cadeau').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modal-cadeau')) {
+      document.getElementById('modal-cadeau').style.display = 'none';
+    }
+  });
+
+  // ─── Soumettre le formulaire cadeau ───
+  document.getElementById('cadeau-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const prenom   = sanitize(document.getElementById('input-prenom').value);
+    const nom      = sanitize(document.getElementById('input-nom').value);
+    const afficher = document.getElementById('input-afficher').checked;
+
+    // Validation
+    if (prenom.length < 2 || nom.length < 2) {
+      document.getElementById('modal-cadeau-error').textContent   = '❌ Prénom et nom doivent faire au moins 2 caractères.';
+      document.getElementById('modal-cadeau-error').style.display = 'block';
+      return;
+    }
+
+    const fullName    = `${prenom} ${nom}`;
+    // takenBy  → toujours le vrai nom (visible uniquement dans Firestore)
+    // displayName → ce qui s'affiche sur le site
+    const takenBy     = fullName;
+    const displayName = afficher ? fullName : 'anonyme';
+
+    try {
+      await updateDoc(doc(db, 'cadeaux', selectedGiftId), {
+        takenBy,
+        displayName
+      });
+
+      document.getElementById('modal-cadeau-success').style.display = 'block';
+      document.getElementById('cadeau-form').style.display          = 'none';
+      document.getElementById('modal-cadeau-error').style.display   = 'none';
+
+      // Ouvrir le lien si présent
+      if (selectedGiftLink) {
+        window.open(selectedGiftLink, '_blank', 'noopener,noreferrer');
+      }
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById('modal-cadeau-error').textContent   = '❌ Une erreur est survenue. Réessayez.';
+      document.getElementById('modal-cadeau-error').style.display = 'block';
+    }
+  });
+
+  // ─── Chargement des cadeaux ───
+  onSnapshot(query(collection(db, 'cadeaux'), orderBy('order', 'asc')), snap => {
+    const list    = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const grid    = document.getElementById('gifts-grid');
     const loading = document.getElementById('gifts-loading');
     const empty   = document.getElementById('gifts-empty');
 
     loading.style.display = 'none';
 
-    if(!list.length){
+    if (!list.length) {
       empty.style.display = 'block';
       grid.style.display  = 'none';
       return;
@@ -87,56 +198,60 @@
 
     empty.style.display = 'none';
     grid.style.display  = 'grid';
-    grid.innerHTML = '';
+    grid.innerHTML      = '';
 
-    list.forEach(g=>{
+    list.forEach(g => {
       const taken     = !!g.takenBy;
-      const safeName  = sanitize(g.name||'');
-      const safeDesc  = sanitize(g.desc||'');
-      const safePrice = sanitize(g.price||'');
-      const safeTaken = taken ? sanitize(g.takenBy) : '';
-      const safeLink  = sanitize(g.link||'');
-      const safePhoto = sanitize(g.photo||'');
+      const safeName  = sanitize(g.name  || '');
+      const safeDesc  = sanitize(g.desc  || '');
+      const safePrice = sanitize(g.price || '');
+      const safeLink  = sanitize(g.link  || '');
+      const safePhoto = sanitize(g.photo || '');
+
+      // Affichage : on lit displayName, pas takenBy
+      let takenLabel = '';
+      if (taken) {
+        const display = g.displayName || 'anonyme';
+        takenLabel = display === 'anonyme'
+          ? '✓ Offert anonymement'
+          : '✓ Offert par ' + sanitize(display);
+      }
 
       const card = document.createElement('div');
       card.className = 'gift-card fade-in';
       card.innerHTML = `
         <div class="gift-photo">
           ${safePhoto
-            ?`<img src="${safePhoto}" alt="${safeName}" loading="lazy">`
-            :`<div class="gift-icon-wrap">${giftIcon}</div>`}
+            ? `<img src="${safePhoto}" alt="${safeName}" loading="lazy">`
+            : `<div class="gift-icon-wrap">${giftIcon}</div>`}
         </div>
         <div class="gift-body">
           <h3>${safeName}</h3>
           <p class="gift-desc">${safeDesc}</p>
           <span class="gift-price">${safePrice}</span>
-          <span class="gift-status">${taken?'✓ Offert par '+safeTaken:''}</span>
-          <button class="btn-gift${taken?' taken':''}" data-id="${g.id}" data-link="${safeLink}" ${taken?'disabled':''}>
-            ${taken?'Déjà offert ✓':'Offrir ce cadeau'}
+          <span class="gift-status">${takenLabel}</span>
+          <button
+            class="btn-gift${taken ? ' taken' : ''}"
+            data-id="${g.id}"
+            data-name="${safeName}"
+            data-link="${safeLink}"
+            ${taken ? 'disabled' : ''}>
+            ${taken ? 'Déjà offert ✓' : 'Offrir ce cadeau'}
           </button>
         </div>`;
+
       grid.appendChild(card);
       observer.observe(card);
     });
 
-    grid.querySelectorAll('.btn-gift:not(.taken)').forEach(btn=>{
-      btn.addEventListener('click', async()=>{
-        const rawDonor = prompt('Votre prénom, pour que les mariés sachent qui les remercier :');
-        if(!rawDonor||!rawDonor.trim()) return;
-        const donor = sanitize(rawDonor);
-        if(donor.length<2||donor.length>40){ alert('Prénom invalide (2 à 40 caractères).'); return; }
-        btn.disabled = true; btn.textContent = 'Envoi…';
-        try{
-          await updateDoc(doc(db,'cadeaux',btn.dataset.id),{ takenBy: donor });
-          if(btn.dataset.link) window.open(btn.dataset.link,'_blank','noopener,noreferrer');
-        } catch(e){
-          alert('Une erreur est survenue. Réessayez.');
-          btn.disabled = false; btn.textContent = 'Offrir ce cadeau';
-          console.error(e);
-        }
+    // ─── Attacher les écouteurs sur les boutons ───
+    grid.querySelectorAll('.btn-gift:not(.taken)').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openModal(btn.dataset.id, btn.dataset.name, btn.dataset.link);
       });
     });
   });
 </script>
 </body>
 </html>
+
