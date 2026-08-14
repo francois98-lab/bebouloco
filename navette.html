@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Navette — Notre mariage</title>
+<title>Logement & navette — Notre mariage</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
     <div class="brand">Notre mariage</div>
     <nav class="nav-links">
       <a href="index.html">Accueil</a>
-      <a href="navette.html" class="active">Navette</a>
+      <a href="navette.html" class="active">Logement & navette</a>
       <a href="cadeaux.html">Cadeaux</a>
     </nav>
   </div>
@@ -26,14 +26,37 @@
 
 <section class="page-hero">
   <div class="hero-inner">
-    <p class="eyebrow">Organisez votre trajet</p>
-    <h1>La navette</h1>
-    <p class="hero-subtitle">Réservez votre place dans la navette pour rejoindre le château. Les places sont limitées !</p>
+    <p class="eyebrow">Où dormir & comment venir</p>
+    <h1>Logement & <em>navette</em></h1>
+    <p class="hero-subtitle">
+      Pour un maximum de tranquillité, nous vous recommandons de réserver votre chambre dans notre hôtel partenaire : la navette y fait des allers-retours directs vers le château, pas besoin de voiture ni de chercher une place de parking !
+    </p>
+  </div>
+</section>
+
+<section class="hotel-reco">
+  <div class="wrap">
+    <div class="hotel-card">
+      <div class="hotel-icon">🏨</div>
+      <div class="hotel-content">
+        <h3>Ibis Lyon Sud Chasse-sur-Rhône</h3>
+        <p class="hotel-address">📍 145 Rue Pasteur, 38670 Chasse-sur-Rhône</p>
+        <p class="hotel-note">✨ La navette s'arrête directement devant l'hôtel — c'est l'option la plus simple pour profiter pleinement de la soirée sans vous soucier du retour.</p>
+        <a href="https://all.accor.com/booking/fr/accor/hotel/2169?dateIn=2026-08-16&nights=1&compositions=2" target="_blank" rel="noopener noreferrer" class="link-inline">
+          Réserver votre chambre <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
   </div>
 </section>
 
 <section class="trajets-section">
   <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Réservez votre trajet</span>
+      <h2>🚌 La navette</h2>
+      <p>Les places sont limitées, pensez à réserver à l'avance !</p>
+    </div>
     <div class="trajets-columns">
       <div class="trajets-col">
         <h2>🚌 Aller</h2>
@@ -105,7 +128,6 @@
   function renderGuestFields(count) {
     const container = document.getElementById('guests-fields');
 
-    // Sauvegarder les valeurs déjà saisies
     const existing = [...container.querySelectorAll('.guest-block')].map(block => ({
       prenom: block.querySelector('.input-prenom').value,
       nom:    block.querySelector('.input-nom').value,
@@ -125,7 +147,6 @@
           <input type="text" class="input-nom" placeholder="Ex : Dupont" required maxlength="40">
         </label>
       `;
-      // Restaurer les valeurs si elles existaient
       if (existing[i]) {
         block.querySelector('.input-prenom').value = existing[i].prenom;
         block.querySelector('.input-nom').value    = existing[i].nom;
@@ -179,7 +200,6 @@
             </button>` : ''}
         `;
 
-        // Déduction automatique du type selon le lieu de départ
         const type = t.depart.toLowerCase().includes('château') ? 'retour' : 'aller';
 
         if (type === 'retour') {
@@ -189,7 +209,6 @@
         }
       });
 
-      // ─── Boutons réserver ───
       document.querySelectorAll('.trajet-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           selectedTrajetId = btn.dataset.id;
@@ -203,10 +222,8 @@
           document.getElementById('modal-error').style.display        = 'none';
           document.getElementById('reservation-form').style.display   = 'block';
 
-          // Générer 1 champ au départ
           renderGuestFields(1);
 
-          // Cloner les boutons pour éviter les doublons d'écouteurs
           const btnMinus = document.getElementById('btn-minus');
           const btnPlus  = document.getElementById('btn-plus');
           const newMinus = btnMinus.cloneNode(true);
@@ -250,32 +267,27 @@
     }
   }
 
-  // ─── Fermer modal ✕ ───
   document.getElementById('modal-close').addEventListener('click', () => {
     document.getElementById('modal').style.display = 'none';
   });
 
-  // ─── Fermer modal en cliquant en dehors ───
   document.getElementById('modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('modal')) {
       document.getElementById('modal').style.display = 'none';
     }
   });
 
-  // ─── Soumettre réservation ───
   document.getElementById('reservation-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const guests    = parseInt(document.getElementById('input-guests').value);
     const trajetRef = doc(db, 'navette_trajets', selectedTrajetId);
 
-    // Récupérer tous les noms/prénoms
     const guestBlocks = document.querySelectorAll('.guest-block');
     const passagers = [...guestBlocks].map(block => ({
       prenom: block.querySelector('.input-prenom').value.trim(),
       nom:    block.querySelector('.input-nom').value.trim(),
     }));
 
-    // Vérifier que tous les champs sont remplis
     const incomplet = passagers.some(p => !p.prenom || !p.nom);
     if (incomplet) {
       document.getElementById('modal-error').textContent   = '❌ Merci de remplir tous les champs nom/prénom.';
@@ -316,7 +328,6 @@
     }
   });
 
-  // ─── Scroll line ───
   window.addEventListener('scroll', () => {
     const el  = document.getElementById('scroll-line');
     const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
@@ -327,6 +338,7 @@
 </script>
 </body>
 </html>
+
 
 
 
