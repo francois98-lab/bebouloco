@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notre mariage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="scroll-line" id="scroll-line"></div>
+
+<header>
+  <div class="nav">
+    <div class="brand">Notre mariage</div>
+    <nav class="nav-links">
+      <a href="index.html" class="active">Accueil</a>
+      <a href="navette.html">Navette</a>
+      <a href="cadeaux.html">Cadeaux</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <svg class="branch" viewBox="0 0 220 34" fill="none" aria-hidden="true">
+      <path d="M10,17 C60,4 90,30 110,17 C130,4 160,30 210,17" stroke="#F0C25E" stroke-width="1.2"/>
+      <ellipse cx="35" cy="10" rx="6" ry="2.6" fill="#5C7A45" transform="rotate(-20 35 10)"/>
+      <ellipse cx="70" cy="26" rx="6" ry="2.6" fill="#B23A2E" transform="rotate(20 70 26)"/>
+      <ellipse cx="150" cy="8" rx="6" ry="2.6" fill="#5C7A45" transform="rotate(-15 150 8)"/>
+      <ellipse cx="185" cy="27" rx="6" ry="2.6" fill="#E0A726" transform="rotate(18 185 27)"/>
+      <circle cx="110" cy="17" r="3.4" fill="#2F5A82"/>
+    </svg>
+    <p class="eyebrow">Toutes les infos pratiques pour le grand jour</p>
+    <h1>Bienvenue !</h1>
+    <p class="hero-subtitle">
+      Retrouvez ici les horaires de la navette, notre liste de cadeaux, et le programme de la journée.<br>
+      Chaque cadeau réservé disparaît de la liste pour éviter les doublons.
+    </p>
+    <div class="hero-cta">
+      <a href="navette.html"><button class="btn-primary">Voir la navette</button></a>
+      <a href="cadeaux.html"><button class="btn-ghost">Voir les cadeaux</button></a>
+    </div>
+    <p class="hero-date">Avec amour, à très vite le jour J.</p>
+  </div>
+</section>
+
+<section class="programme">
+  <div class="wrap">
+    <h2>Programme du mariage</h2>
+    <ul class="timeline">
+      <li><strong>Arrivée des invités :</strong> avant 15h30</li>
+      <li><strong>Début de la cérémonie :</strong> 15h45</li>
+      <li><strong>Cocktail :</strong> 17h00</li>
+      <li><strong>Repas :</strong> 19h00</li>
+      <li><strong>Soirée dansante :</strong> 22h00</li>
+      <li><strong>Fin de soirée :</strong> 4h00</li>
+      <li><strong>Dernier retour navette :</strong> 4h30</li>
+      <li><strong>Le lendemain - Brunch :</strong> Rendez-vous à 11h00</li>
+      <li><strong>Fin du mariage :</strong> 15h00</li>
+    </ul>
+  </div>
+</section>
+
+<section class="lieu">
+  <div class="wrap">
+    <h2>Le lieu : Château La Gallée</h2>
+    <p>
+      Le mariage aura lieu au <strong>Château La Gallée</strong>, un domaine historique situé à Millery, à 20 minutes au sud de Lyon.<br>
+      <br>
+      <strong>Adresse :</strong> 1 Route de Saint-Andéol, 69390 Millery<br>
+      <strong>Accès :</strong> Un parking est disponible sur place. Une navette sera également mise à disposition depuis Lyon.<br>
+      <br>
+      <strong>À propos du château :</strong><br>
+      Niché au cœur des vignes, le Château La Gallée offre un cadre élégant et convivial pour célébrer ensemble cette journée unique. Profitez des jardins, de la vue sur les monts du Lyonnais et de la salle de réception authentique.
+    </p>
+    <a href="https://www.chateaulagallee.com/" target="_blank" class="btn-primary">En savoir plus sur le château</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <h3>Notre mariage</h3>
+    <p class="foot-bottom">Fait avec amour ♥</p>
+  </div>
+</footer>
+
+<script>
+  window.addEventListener('scroll',()=>{
+    const el=document.getElementById('scroll-line');
+    const pct=window.scrollY/(document.body.scrollHeight-window.innerHeight)*100;
+    el.style.width=pct+'%';
+  });
+</script>
+</body>
+</html>
