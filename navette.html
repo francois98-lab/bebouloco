@@ -174,40 +174,56 @@
         return;
       }
 
-      snap.forEach(docSnap => {
-        const t = docSnap.data();
-        const placesRestantes = t.placesRestantes ?? 8;
-        const complet = placesRestantes <= 0;
+snap.forEach(docSnap => {
+  const t = docSnap.data();
+  const placesRestantes = t.placesRestantes ?? 8;
+  const complet = placesRestantes <= 0;
 
-        const card = document.createElement('div');
-        card.className = 'trajet-card' + (complet ? ' complet' : '');
-        card.innerHTML = `
-          <div class="trajet-heure">${t.heure}</div>
-          <div class="trajet-route">${t.depart} → ${t.arrivee}</div>
-          <div class="trajet-notes">${t.notes ?? ''}</div>
-          <div class="trajet-places ${complet ? 'complet' : ''}">
-            ${complet
-              ? '🚫 Complet'
-              : `🪑 ${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`
-            }
-          </div>
-          ${!complet ? `
-            <button class="trajet-btn"
-              data-id="${docSnap.id}"
-              data-info="${t.heure} — ${t.depart} → ${t.arrivee}"
-              data-places="${placesRestantes}">
-              Réserver
-            </button>` : ''}
-        `;
+  // ─── Liste des passagers déjà inscrits ───
+  const reservations = t.reservations ?? [];
+  const passagersAffiches = reservations
+    .flatMap(r => r.passagers ?? [])
+    .map(p => `${p.prenom} ${p.nom}`.trim());
 
-        const type = t.depart.toLowerCase().includes('château') ? 'retour' : 'aller';
+  const listePassagersHTML = passagersAffiches.length
+    ? `<div class="trajet-passagers">
+         <p class="trajet-passagers-label">👥 Déjà inscrits</p>
+         <ul>
+           ${passagersAffiches.map(nom => `<li>${nom}</li>`).join('')}
+         </ul>
+       </div>`
+    : '';
 
-        if (type === 'retour') {
-          retourList.appendChild(card);
-        } else {
-          allerList.appendChild(card);
-        }
-      });
+  const card = document.createElement('div');
+  card.className = 'trajet-card' + (complet ? ' complet' : '');
+  card.innerHTML = `
+    <div class="trajet-heure">${t.heure}</div>
+    <div class="trajet-route">${t.depart} → ${t.arrivee}</div>
+    <div class="trajet-notes">${t.notes ?? ''}</div>
+    <div class="trajet-places ${complet ? 'complet' : ''}">
+      ${complet
+        ? '🚫 Complet'
+        : `🪑 ${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`
+      }
+    </div>
+    ${listePassagersHTML}
+    ${!complet ? `
+      <button class="trajet-btn"
+        data-id="${docSnap.id}"
+        data-info="${t.heure} — ${t.depart} → ${t.arrivee}"
+        data-places="${placesRestantes}">
+        Réserver
+      </button>` : ''}
+  `;
+
+  const type = t.depart.toLowerCase().includes('château') ? 'retour' : 'aller';
+
+  if (type === 'retour') {
+    retourList.appendChild(card);
+  } else {
+    allerList.appendChild(card);
+  }
+});
 
       document.querySelectorAll('.trajet-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -271,62 +287,64 @@
     document.getElementById('modal').style.display = 'none';
   });
 
-  document.getElementById('modal').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('modal')) {
-      document.getElementById('modal').style.display = 'none';
-    }
-  });
+document.getElementById('reservation-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const guests    = parseInt(document.getElementById('input-guests').value);
+  const trajetRef = doc(db, 'navette_trajets', selectedTrajetId);
 
-  document.getElementById('reservation-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const guests    = parseInt(document.getElementById('input-guests').value);
-    const trajetRef = doc(db, 'navette_trajets', selectedTrajetId);
+  const guestBlocks = document.querySelectorAll('.guest-block');
 
-    const guestBlocks = document.querySelectorAll('.guest-block');
-    const passagers = [...guestBlocks].map(block => ({
-      prenom: block.querySelector('.input-prenom').value.trim(),
-      nom:    block.querySelector('.input-nom').value.trim(),
-    }));
+  // ─── Récupération + validation des champs saisis ───
+  const passagersInput = [...guestBlocks].map(block => ({
+    prenom:     block.querySelector('.input-prenom').value.trim(),
+    nomComplet: block.querySelector('.input-nom').value.trim(),
+  }));
 
-    const incomplet = passagers.some(p => !p.prenom || !p.nom);
-    if (incomplet) {
-      document.getElementById('modal-error').textContent   = '❌ Merci de remplir tous les champs nom/prénom.';
-      document.getElementById('modal-error').style.display = 'block';
-      return;
-    }
+  const incomplet = passagersInput.some(p => !p.prenom || !p.nomComplet);
+  if (incomplet) {
+    document.getElementById('modal-error').textContent   = '❌ Merci de remplir tous les champs nom/prénom.';
+    document.getElementById('modal-error').style.display = 'block';
+    return;
+  }
 
-    try {
-      await runTransaction(db, async (transaction) => {
-        const trajetDoc = await transaction.get(trajetRef);
-        if (!trajetDoc.exists()) throw new Error('Trajet introuvable.');
+  // ─── Troncature AVANT tout envoi vers Firestore ───
+  const passagers = passagersInput.map(p => ({
+    prenom: p.prenom,
+    nom:    p.nomComplet.charAt(0).toUpperCase() + '.'
+  }));
 
-        const placesRestantes = trajetDoc.data().placesRestantes ?? 8;
-        if (guests > placesRestantes) throw new Error('Plus assez de places disponibles.');
+  try {
+    await runTransaction(db, async (transaction) => {
+      const trajetDoc = await transaction.get(trajetRef);
+      if (!trajetDoc.exists()) throw new Error('Trajet introuvable.');
 
-        const nouvelleReservation = {
-          passagers: passagers,
-          guests:    guests,
-          date:      new Date().toISOString()
-        };
+      const placesRestantes = trajetDoc.data().placesRestantes ?? 8;
+      if (guests > placesRestantes) throw new Error('Plus assez de places disponibles.');
 
-        transaction.update(trajetRef, {
-          placesRestantes: placesRestantes - guests,
-          reservations:    arrayUnion(nouvelleReservation)
-        });
+      const nouvelleReservation = {
+        passagers: passagers,
+        guests:    guests,
+        date:      new Date().toISOString()
+      };
+
+      transaction.update(trajetRef, {
+        placesRestantes: placesRestantes - guests,
+        reservations:    arrayUnion(nouvelleReservation)
       });
+    });
 
-      document.getElementById('modal-success').style.display    = 'block';
-      document.getElementById('reservation-form').style.display = 'none';
-      document.getElementById('modal-error').style.display      = 'none';
+    document.getElementById('modal-success').style.display    = 'block';
+    document.getElementById('reservation-form').style.display = 'none';
+    document.getElementById('modal-error').style.display      = 'none';
 
-      loadTrajets();
+    loadTrajets();
 
-    } catch(e) {
-      console.error('Erreur réservation :', e);
-      document.getElementById('modal-error').textContent   = '❌ ' + e.message;
-      document.getElementById('modal-error').style.display = 'block';
-    }
-  });
+  } catch(e) {
+    console.error('Erreur réservation :', e);
+    document.getElementById('modal-error').textContent   = '❌ ' + e.message;
+    document.getElementById('modal-error').style.display = 'block';
+  }
+});
 
   window.addEventListener('scroll', () => {
     const el  = document.getElementById('scroll-line');
