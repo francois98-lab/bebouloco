@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Notre liste de mariage : découvrez les cadeaux que vous pouvez nous offrir.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💍</text></svg>">
 <title>Notre mariage</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,9 +18,12 @@
 <header>
   <div class="nav">
     <div class="brand">Notre mariage</div>
-    <nav class="nav-links">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="nav-links">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="nav-links" id="nav-links">
       <a href="accueil.html">Accueil</a>
-      <a href="navette.html">Logement & Navette</a>
+      <a href="navette.html">Logement &amp; Navette</a>
       <a href="cadeaux.html" class="active">Liste de Mariage</a>
     </nav>
   </div>
@@ -32,19 +37,21 @@
   </div>
 </div>
 
-<section class="wrap">
-  <div id="gifts-loading" class="loading-state">Chargement des cadeaux…</div>
-  <div id="gifts-empty" class="empty-state" style="display:none;">
-    <p>Aucun cadeau pour le moment.</p>
-  </div>
-  <div class="gifts-grid" id="gifts-grid" style="display:none;"></div>
-  <p class="contact-note">Merci de tout cœur pour votre générosité.</p>
-</section>
+<main>
+  <section class="wrap">
+    <div id="gifts-loading" class="loading-state"><div class="spinner"></div>Chargement des cadeaux…</div>
+    <div id="gifts-empty" class="empty-state" style="display:none;">
+      <p>Aucun cadeau pour le moment.</p>
+    </div>
+    <div class="gifts-grid" id="gifts-grid" style="display:none;"></div>
+    <p class="contact-note">Merci de tout cœur pour votre générosité.</p>
+  </section>
+</main>
 
 <!-- Modal cadeau -->
-<div class="modal-overlay" id="modal-cadeau" style="display:none">
+<div class="modal-overlay" id="modal-cadeau" style="display:none" role="dialog" aria-modal="true" aria-labelledby="modal-cadeau-title">
   <div class="modal">
-    <button class="modal-close" id="modal-cadeau-close">✕</button>
+    <button class="modal-close" id="modal-cadeau-close" aria-label="Fermer">✕</button>
     <h2 id="modal-cadeau-title">Offrir</h2>
     <p id="modal-cadeau-info" class="modal-info"></p>
 
@@ -67,8 +74,8 @@
       <button type="submit" class="btn-primary" id="modal-submit-btn">Confirmer</button>
     </form>
 
-    <p id="modal-cadeau-success" class="success-msg" style="display:none"></p>
-    <p id="modal-cadeau-error" class="error-msg" style="display:none">❌ Une erreur est survenue.</p>
+    <p id="modal-cadeau-success" class="success-msg" style="display:none" aria-live="polite"></p>
+    <p id="modal-cadeau-error" class="error-msg" style="display:none" aria-live="polite">❌ Une erreur est survenue.</p>
   </div>
 </div>
 
@@ -79,43 +86,29 @@
   </div>
 </footer>
 
+<button class="scroll-top" id="scroll-top" aria-label="Retour en haut">↑</button>
+
 <script type="module">
   import { db } from './firebase-config.js';
   import {
-    collection, onSnapshot, doc,
-    updateDoc, query, orderBy, arrayUnion
+    collection, onSnapshot, doc, query, orderBy, arrayUnion, runTransaction
   } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { initScrollLine, initMobileMenu, initScrollTop, observeFadeIns, escapeHTML, isValidName, cleanInput, setupModal } from './main.js';
 
-  // ─── Scroll line ───
-  window.addEventListener('scroll', () => {
-    const el  = document.getElementById('scroll-line');
-    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
-    el.style.width = pct + '%';
-  });
+  initScrollLine();
+  initMobileMenu();
+  initScrollTop();
 
-  // ─── Animations au scroll ───
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach((e, i) => {
-      if (e.isIntersecting) {
-        setTimeout(() => e.target.classList.add('visible'), i * 80);
-        observer.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.1 });
-
-  function sanitize(str) {
-    return String(str).replace(/[<>"'&]/g, '').trim();
-  }
+  const modalCtrl = setupModal(document.getElementById('modal-cadeau'));
 
   const giftIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--terracotta-deep)" stroke-width="1.5" width="32" height="32"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M4 9l8-5 8 5"/><path d="M12 9v11"/></svg>`;
 
-  // ─── État de la modal ───
   let selectedGiftId   = null;
   let selectedGiftLink = null;
   let selectedGiftType = null;
+  let isSubmitting     = false;
 
-  // ─── Ouvrir la modal ───
-  function openModal(giftId, giftName, giftLink, giftType) {
+  function openModal(giftId, giftName, giftLink, giftType, triggerEl) {
     selectedGiftId   = giftId;
     selectedGiftLink = giftLink;
     selectedGiftType = giftType;
@@ -131,95 +124,90 @@
     document.getElementById('modal-cadeau-success').style.display = 'none';
     document.getElementById('modal-cadeau-error').style.display   = 'none';
 
-    // Affiche la case "Afficher mon nom" uniquement pour les cadeaux classiques
     document.getElementById('afficher-nom-wrap').style.display =
       giftType === 'cagnotte' ? 'none' : 'block';
 
-    document.getElementById('modal-submit-btn').textContent =
-      giftType === 'cagnotte' ? 'Continuer vers le paiement' : 'Continuer vers le paiement';
+    document.getElementById('modal-submit-btn').textContent = 'Continuer vers le paiement';
+    document.getElementById('modal-submit-btn').disabled    = false;
 
-    document.getElementById('modal-cadeau').style.display = 'flex';
+    modalCtrl.open(triggerEl);
   }
 
-  // ─── Fermer la modal ✕ ───
-  document.getElementById('modal-cadeau-close').addEventListener('click', () => {
-    document.getElementById('modal-cadeau').style.display = 'none';
-  });
+  document.getElementById('modal-cadeau-close').addEventListener('click', modalCtrl.close);
 
-  // ─── Fermer en cliquant en dehors ───
-  document.getElementById('modal-cadeau').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('modal-cadeau')) {
-      document.getElementById('modal-cadeau').style.display = 'none';
-    }
-  });
-
-  // ─── Soumettre le formulaire cadeau ───
   document.getElementById('cadeau-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
-    const prenom = sanitize(document.getElementById('input-prenom').value);
-    const nom    = sanitize(document.getElementById('input-nom').value);
+    const errorEl   = document.getElementById('modal-cadeau-error');
+    const successEl = document.getElementById('modal-cadeau-success');
+    const submitBtn = document.getElementById('modal-submit-btn');
 
-    if (prenom.length < 2 || nom.length < 2) {
-      document.getElementById('modal-cadeau-error').textContent   = '❌ Prénom et nom doivent faire au moins 2 caractères.';
-      document.getElementById('modal-cadeau-error').style.display = 'block';
+    const prenom = cleanInput(document.getElementById('input-prenom').value);
+    const nom    = cleanInput(document.getElementById('input-nom').value);
+
+    if (!isValidName(prenom) || !isValidName(nom)) {
+      errorEl.textContent   = '❌ Merci de renseigner un nom et un prénom valides (2 à 40 caractères).';
+      errorEl.style.display = 'block';
       return;
     }
 
     const fullName = `${prenom} ${nom}`;
-
-    // Pour une cagnotte : nom toujours affiché
-    // Pour un cadeau classique : selon la case cochée
     const afficher    = document.getElementById('input-afficher').checked;
     const displayName = selectedGiftType === 'cagnotte'
       ? fullName
       : (afficher ? fullName : 'anonyme');
 
+    isSubmitting = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Envoi en cours…';
+    errorEl.style.display = 'none';
+
     try {
+      const giftRef = doc(db, 'cadeaux', selectedGiftId);
+
       if (selectedGiftType === 'cagnotte') {
-        // Plusieurs personnes peuvent contribuer : on ajoute à un tableau
-        await updateDoc(doc(db, 'cadeaux', selectedGiftId), {
-          contributions: arrayUnion({
-            name: fullName,
-            displayName
-          })
+        await runTransaction(db, async (tx) => {
+          const snap = await tx.get(giftRef);
+          if (!snap.exists()) throw new Error('Ce cadeau n\'existe plus.');
+          tx.update(giftRef, {
+            contributions: arrayUnion({ name: fullName, displayName })
+          });
         });
 
-        document.getElementById('modal-cadeau-success').textContent =
-          '✅ Merci ! Vous allez être redirigé(e) vers la page de paiement.';
-        document.getElementById('modal-cadeau-success').style.display = 'block';
-        document.getElementById('cadeau-form').style.display          = 'none';
-        document.getElementById('modal-cadeau-error').style.display   = 'none';
-
-        if (selectedGiftLink) {
-          window.open(selectedGiftLink, '_blank', 'noopener,noreferrer');
-        }
-
+        successEl.textContent = '✅ Merci ! Vous allez être redirigé(e) vers la page de paiement.';
       } else {
-        // Cadeau classique : un seul bénéficiaire possible
-        await updateDoc(doc(db, 'cadeaux', selectedGiftId), {
-          takenBy: fullName,
-          displayName
+        // Transaction pour éviter que deux invités réservent le même cadeau en même temps
+        await runTransaction(db, async (tx) => {
+          const snap = await tx.get(giftRef);
+          if (!snap.exists()) throw new Error('Ce cadeau n\'existe plus.');
+          if (snap.data().takenBy) {
+            throw new Error('Ce cadeau vient d\'être réservé par quelqu\'un d\'autre.');
+          }
+          tx.update(giftRef, { takenBy: fullName, displayName });
         });
 
-        document.getElementById('modal-cadeau-success').textContent = '✅ Merci pour votre générosité !';
-        document.getElementById('modal-cadeau-success').style.display = 'block';
-        document.getElementById('cadeau-form').style.display          = 'none';
-        document.getElementById('modal-cadeau-error').style.display   = 'none';
+        successEl.textContent = '✅ Merci pour votre générosité !';
+      }
 
-        if (selectedGiftLink) {
-          window.open(selectedGiftLink, '_blank', 'noopener,noreferrer');
-        }
+      successEl.style.display = 'block';
+      document.getElementById('cadeau-form').style.display = 'none';
+
+      if (selectedGiftLink) {
+        window.open(selectedGiftLink, '_blank', 'noopener,noreferrer');
       }
 
     } catch (err) {
       console.error(err);
-      document.getElementById('modal-cadeau-error').textContent   = '❌ Une erreur est survenue. Réessayez.';
-      document.getElementById('modal-cadeau-error').style.display = 'block';
+      errorEl.textContent   = '❌ ' + (err.message || 'Une erreur est survenue. Réessayez.');
+      errorEl.style.display = 'block';
+    } finally {
+      isSubmitting = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Continuer vers le paiement';
     }
   });
 
-  // ─── Chargement des cadeaux ───
   onSnapshot(query(collection(db, 'cadeaux'), orderBy('order', 'asc')), snap => {
     const list    = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const grid    = document.getElementById('gifts-grid');
@@ -234,11 +222,9 @@
       return;
     }
 
-    // ─── Tri : cadeaux déjà offerts en dernier, cagnottes toujours "disponibles" ───
     list.sort((a, b) => {
       const aTaken = a.type === 'cagnotte' ? false : !!a.takenBy;
       const bTaken = b.type === 'cagnotte' ? false : !!b.takenBy;
-
       if (aTaken !== bTaken) return aTaken ? 1 : -1;
       return (a.order ?? 0) - (b.order ?? 0);
     });
@@ -249,11 +235,11 @@
 
     list.forEach(g => {
       const isCagnotte = g.type === 'cagnotte';
-      const safeName   = sanitize(g.name  || '');
-      const safeDesc   = sanitize(g.desc  || '');
-      const safePrice  = sanitize(g.price || '');
-      const safeLink   = sanitize(g.link  || '');
-      const safePhoto  = sanitize(g.photo || '');
+      const safeName   = escapeHTML(g.name  || '');
+      const safeDesc   = escapeHTML(g.desc  || '');
+      const safePrice  = escapeHTML(g.price || '');
+      const safeLink   = escapeHTML(g.link  || '');
+      const safePhoto  = escapeHTML(g.photo || '');
 
       let statusHtml = '';
       let buttonHtml = '';
@@ -267,15 +253,9 @@
           : `<span class="gift-status">Soyez le premier à participer !</span>`;
 
         buttonHtml = `
-          <button
-            class="btn-gift"
-            data-id="${g.id}"
-            data-name="${safeName}"
-            data-link="${safeLink}"
-            data-type="cagnotte">
+          <button class="btn-gift" data-id="${g.id}" data-name="${safeName}" data-link="${safeLink}" data-type="cagnotte">
             Participer
           </button>`;
-
       } else {
         const taken = !!g.takenBy;
         let takenLabel = '';
@@ -283,18 +263,12 @@
           const display = g.displayName || 'anonyme';
           takenLabel = display === 'anonyme'
             ? '✓ Offert anonymement'
-            : '✓ Offert par ' + sanitize(display);
+            : '✓ Offert par ' + escapeHTML(display);
         }
 
         statusHtml = `<span class="gift-status">${takenLabel}</span>`;
         buttonHtml = `
-          <button
-            class="btn-gift${taken ? ' taken' : ''}"
-            data-id="${g.id}"
-            data-name="${safeName}"
-            data-link="${safeLink}"
-            data-type="classique"
-            ${taken ? 'disabled' : ''}>
+          <button class="btn-gift${taken ? ' taken' : ''}" data-id="${g.id}" data-name="${safeName}" data-link="${safeLink}" data-type="classique" ${taken ? 'disabled' : ''}>
             ${taken ? 'Déjà offert ✓' : 'Offrir ce cadeau'}
           </button>`;
       }
@@ -304,7 +278,7 @@
       card.innerHTML = `
         <div class="gift-photo">
           ${safePhoto
-            ? `<img src="${safePhoto}" alt="${safeName}" loading="lazy">`
+            ? `<img src="${safePhoto}" alt="${safeName}" loading="lazy" onerror="this.parentElement.innerHTML='${giftIcon.replace(/'/g, "\\'")}'">`
             : `<div class="gift-icon-wrap">${giftIcon}</div>`}
         </div>
         <div class="gift-body">
@@ -316,12 +290,13 @@
         </div>`;
 
       grid.appendChild(card);
-      observer.observe(card);
     });
+
+    observeFadeIns('.gift-card');
 
     grid.querySelectorAll('.btn-gift:not(.taken)').forEach(btn => {
       btn.addEventListener('click', () => {
-        openModal(btn.dataset.id, btn.dataset.name, btn.dataset.link, btn.dataset.type);
+        openModal(btn.dataset.id, btn.dataset.name, btn.dataset.link, btn.dataset.type, btn);
       });
     });
   });
