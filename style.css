@@ -538,4 +538,40 @@ footer p{font-size:13px;margin:4px 0;position:relative;font-weight:300;}
   margin: 0 0 1rem;
   line-height: 1.4;
 }
+/* ── Liste des passagers déjà inscrits ── */
+.trajet-passagers {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--line);
+  width: 100%;
+}
 
+.trajet-passagers-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+  opacity: 0.65;
+  margin-bottom: 0.5rem;
+}
+
+.trajet-passagers ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  padding: 0;
+  margin: 0;
+}
+
+.trajet-passagers li {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--gentiane);
+  background: rgba(47,90,130,0.08);
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
