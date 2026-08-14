@@ -171,10 +171,14 @@
           const snap = await tx.get(giftRef);
           if (!snap.exists()) throw new Error('Ce cadeau n\'existe plus.');
           tx.update(giftRef, {
-            contributions: arrayUnion({ name: fullName, displayName })
+            contributions: arrayUnion({
+              name: fullName,
+              displayName,
+              date: new Date().toISOString()   // ← garantit l'unicité de chaque entrée
+            })
           });
         });
-
+      
         successEl.textContent = '✅ Merci ! Vous allez être redirigé(e) vers la page de paiement.';
       } else {
         // Transaction pour éviter que deux invités réservent le même cadeau en même temps
