@@ -64,13 +64,52 @@ header{position:sticky;top:0;z-index:100;background:rgba(245,239,221,0.88);backd
 }
 
 /* PAGE HERO */
-.page-hero{background:var(--ink);color:var(--stone);padding:64px 40px 72px;position:relative;overflow:hidden;}
-.page-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 30% 100%,rgba(47,90,130,0.15) 0%,transparent 70%);pointer-events:none;}
-.page-hero .wrap{position:relative;z-index:1;}
-.page-hero .eyebrow{color:rgba(240,194,94,0.7);}
-.page-hero h1{font-size:clamp(36px,6vw,60px);color:var(--stone);margin-bottom:12px;font-weight:500;}
-.page-hero h1 em{font-style:italic;color:#F0C25E;}
-.page-hero-sub{color:rgba(201,210,220,0.8);font-size:16px;font-weight:300;max-width:52ch;line-height:1.75;}
+.page-hero {
+  background: var(--ink);
+  color: var(--stone);
+  padding: 64px 40px 72px;
+  position: relative;
+  overflow: hidden;
+}
+.page-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 80% at 30% 100%, rgba(47,90,130,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.page-hero .wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;      /* Ajouté : limite la largeur du contenu pour une meilleure lisibilité */
+  margin: 0 auto;        /* Ajouté : centre le contenu */
+  text-align: center;    /* Ajouté : centre le texte */
+}
+.page-hero .eyebrow {
+  color: rgba(240,194,94,0.7);
+}
+.page-hero h1 {
+  font-size: clamp(36px,6vw,60px);
+  color: var(--stone);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+.page-hero h1 em {
+  font-style: italic;
+  color: #F0C25E;
+}
+.page-hero-sub {
+  color: rgba(201,210,220,0.8);
+  font-size: 16px;
+  font-weight: 300;
+  max-width: 52ch;
+  line-height: 1.75;
+  margin: 0 auto;         /* Ajouté : centre le paragraphe dans le conteneur */
+  display: block;         /* Ajouté : garantit le comportement en bloc */
+  text-align: center;     /* Ajouté : centre le texte */
+  padding-top: 16px;      /* Optionnel : espace au-dessus pour aérer */
+}
+
 
 /* BUTTONS */
 .btn-primary{background:var(--terracotta);color:var(--ink);padding:14px 28px;border-radius:999px;font-weight:600;font-size:14px;transition:var(--transition);box-shadow:0 4px 20px rgba(224,167,38,0.35);border:none;cursor:pointer;}
