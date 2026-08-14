@@ -41,6 +41,21 @@ header{position:sticky;top:0;z-index:100;background:rgba(245,239,221,0.88);backd
 .hero-date{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#F0C25E;margin-top:28px;letter-spacing:0.08em;opacity:0.85;}
 .hero-cta{display:flex;gap:14px;justify-content:center;margin-top:36px;flex-wrap:wrap;}
 
+/* PHOTO DES MARIÉS (hero) */
+.hero-photo{
+  width:140px;height:140px;
+  margin:0 auto 28px;
+  border-radius:50%;
+  overflow:hidden;
+  border:3px solid rgba(240,194,94,0.6);
+  box-shadow:0 8px 28px rgba(0,0,0,0.35);
+}
+.hero-photo img{
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+}
+
 /* PAGE HERO */
 .page-hero{background:var(--ink);color:var(--stone);padding:64px 40px 72px;position:relative;overflow:hidden;}
 .page-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 30% 100%,rgba(47,90,130,0.15) 0%,transparent 70%);pointer-events:none;}
@@ -132,19 +147,17 @@ section{padding:72px 0;}
   letter-spacing:0.03em;
 }
 
-.timeline-dot{
-  width:8px;height:8px;border-radius:50%;
-  background:var(--gentiane);flex-shrink:0;
+.timeline-icon{
+  font-size:18px;
+  width:26px;
+  flex-shrink:0;
+  text-align:center;
 }
 
 .timeline-label{
   font-family:'Cormorant Garamond',serif;font-size:18px;
   color:var(--ink);font-weight:500;
 }
-
-/* Distinction subtile entre les deux jours via la couleur du point */
-.timeline--samedi .timeline-dot{background:var(--gentiane);}
-.timeline--dimanche .timeline-dot{background:var(--terracotta-deep);}
 
 @media(max-width:900px){
   .programme-columns{flex-direction:column;align-items:center;}
@@ -157,12 +170,82 @@ section{padding:72px 0;}
   .timeline-time{width:auto;}
 }
 
-
 /* LIEU */
 .lieu{background:var(--surface);}
-.lieu-details{max-width:60ch;margin:0 auto 24px;text-align:center;}
-.lieu-details p{color:var(--ink-2);font-weight:300;font-size:15px;line-height:1.8;margin-bottom:12px;}
 .lieu > .wrap{text-align:center;}
+
+.lieu-content{
+  display:flex;
+  gap:36px;
+  align-items:center;
+  max-width:900px;
+  margin:0 auto 24px;
+  text-align:left;
+}
+.lieu-photo{
+  flex:1 1 320px;
+  border-radius:var(--radius);
+  overflow:hidden;
+  box-shadow:var(--shadow-md);
+}
+.lieu-photo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  aspect-ratio:4/3;
+}
+.lieu-details{
+  flex:1 1 320px;
+}
+.lieu-details p{
+  color:var(--ink-2);font-weight:300;font-size:15px;line-height:1.8;margin-bottom:14px;
+}
+
+@media(max-width:800px){
+  .lieu-content{flex-direction:column;text-align:center;}
+  .lieu-details{text-align:left;}
+}
+
+/* CARTE RECOMMANDATION HÔTEL */
+.hotel-reco{padding-top:24px;padding-bottom:24px;}
+.hotel-card{
+  display:flex;
+  gap:24px;
+  align-items:flex-start;
+  max-width:700px;
+  margin:0 auto;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:28px 32px;
+  box-shadow:var(--shadow-sm);
+}
+.hotel-icon{
+  font-size:36px;
+  flex-shrink:0;
+  line-height:1;
+}
+.hotel-content h3{
+  font-size:20px;
+  margin-bottom:8px;
+}
+.hotel-address{
+  font-size:14px;
+  color:var(--ink-2);
+  margin-bottom:10px;
+}
+.hotel-note{
+  font-size:14px;
+  color:var(--ink-2);
+  font-weight:300;
+  line-height:1.7;
+  margin-bottom:14px;
+}
+
+@media(max-width:600px){
+  .hotel-card{flex-direction:column;align-items:center;text-align:center;padding:24px 20px;}
+}
 
 /* STATES */
 .loading-state{text-align:center;padding:48px;color:var(--ink-2);font-size:14px;font-weight:300;}
@@ -440,62 +523,5 @@ footer p{font-size:13px;margin:4px 0;position:relative;font-weight:300;}
   opacity: 0.5;
   margin: 0 0 1rem;
   line-height: 1.4;
-}
-/* PHOTO DES MARIÉS (hero) */
-.hero-photo{
-  width:140px;height:140px;
-  margin:0 auto 28px;
-  border-radius:50%;
-  overflow:hidden;
-  border:3px solid rgba(240,194,94,0.6);
-  box-shadow:0 8px 28px rgba(0,0,0,0.35);
-}
-.hero-photo img{
-  width:100%;height:100%;
-  object-fit:cover;
-  display:block;
-}
-
-/* ICÔNES / EMOJIS DANS LA FRISE */
-.timeline-icon{
-  font-size:18px;
-  width:26px;
-  flex-shrink:0;
-  text-align:center;
-}
-
-/* PHOTO + DÉTAILS DU LIEU côte à côte */
-.lieu-content{
-  display:flex;
-  gap:36px;
-  align-items:center;
-  max-width:900px;
-  margin:0 auto 24px;
-  text-align:left;
-}
-.lieu-photo{
-  flex:1 1 320px;
-  border-radius:var(--radius);
-  overflow:hidden;
-  box-shadow:var(--shadow-md);
-}
-.lieu-photo img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-  aspect-ratio:4/3;
-}
-.lieu-details{
-  flex:1 1 320px;
-}
-.lieu-details p{
-  color:var(--ink-2);font-weight:300;font-size:15px;line-height:1.8;margin-bottom:14px;
-}
-.lieu > .wrap{text-align:center;}
-
-@media(max-width:800px){
-  .lieu-content{flex-direction:column;text-align:center;}
-  .lieu-details{text-align:left;}
 }
 
