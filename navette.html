@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Logement et navette pour notre mariage : hôtel partenaire et réservation de trajets.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💍</text></svg>">
 <title>Logement & navette — Notre mariage</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,9 +18,12 @@
 <header>
   <div class="nav">
     <div class="brand">Notre mariage</div>
-    <nav class="nav-links">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="nav-links">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="nav-links" id="nav-links">
       <a href="accueil.html">Accueil</a>
-      <a href="navette.html" class="active">Logement & Navette</a>
+      <a href="navette.html" class="active">Logement &amp; Navette</a>
       <a href="cadeaux.html">Liste de Mariage</a>
     </nav>
   </div>
@@ -26,75 +31,77 @@
 
 <div class="page-hero">
   <div class="wrap">
-    <p class="eyebrow">Où dormir & comment venir</p>
-    <h1>Logement & <em>Navette</em></h1>
+    <p class="eyebrow">Où dormir &amp; comment venir</p>
+    <h1>Logement &amp; <em>Navette</em></h1>
     <p class="page-hero-sub">
       Pour un maximum de tranquillité, nous vous recommandons de réserver votre chambre dans notre hôtel partenaire : la navette y fait des allers-retours directs vers le château, pas besoin de voiture ni de chercher une place de parking !
     </p>
   </div>
 </div>
 
-<section class="hotel-reco">
-  <div class="wrap">
-    <div class="hotel-card">
-      <div class="hotel-icon">🏨</div>
-      <div class="hotel-content">
-        <h3>Ibis Lyon Sud Chasse-sur-Rhône</h3>
-        <p class="hotel-address">📍 145 Rue Pasteur, 38670 Chasse-sur-Rhône</p>
-        <p class="hotel-note">✨ La navette s'arrête directement devant l'hôtel — c'est l'option la plus simple pour profiter pleinement de la soirée sans vous soucier du retour.</p>
-        <a href="https://all.accor.com/booking/fr/accor/hotel/2169?dateIn=2026-08-16&nights=1&compositions=2" target="_blank" rel="noopener noreferrer" class="link-inline">
-          Réserver votre chambre <span aria-hidden="true">→</span>
-        </a>
+<main>
+  <section class="hotel-reco">
+    <div class="wrap">
+      <div class="hotel-card">
+        <div class="hotel-icon" aria-hidden="true">🏨</div>
+        <div class="hotel-content">
+          <h3>Ibis Lyon Sud Chasse-sur-Rhône</h3>
+          <p class="hotel-address">📍 145 Rue Pasteur, 38670 Chasse-sur-Rhône</p>
+          <p class="hotel-note">✨ La navette s'arrête directement devant l'hôtel — c'est l'option la plus simple pour profiter pleinement de la soirée sans vous soucier du retour.</p>
+          <a href="https://all.accor.com/booking/fr/accor/hotel/2169?dateIn=2026-08-16&nights=1&compositions=2" target="_blank" rel="noopener noreferrer" class="link-inline">
+            Réserver votre chambre <span aria-hidden="true">→</span>
+          </a>
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="trajets-section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Réservez votre trajet</span>
-      <h2>🚌 La navette</h2>
-      <p>Les places sont limitées, pensez à réserver à l'avance !</p>
-    </div>
-    <div class="trajets-columns">
-      <div class="trajets-col">
-        <h2>🚌 Aller</h2>
-        <div id="trajets-aller" class="trajets-list">
-          <p class="loading">Chargement…</p>
+  <section class="trajets-section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Réservez votre trajet</span>
+        <h2>🚌 La navette</h2>
+        <p>Les places sont limitées, pensez à réserver à l'avance !</p>
+      </div>
+      <div class="trajets-columns">
+        <div class="trajets-col">
+          <h2>🚌 Aller</h2>
+          <div id="trajets-aller" class="trajets-list">
+            <div class="loading"><div class="spinner"></div>Chargement…</div>
+          </div>
+        </div>
+        <div class="trajets-col">
+          <h2>🏠 Retour</h2>
+          <div id="trajets-retour" class="trajets-list">
+            <div class="loading"><div class="spinner"></div>Chargement…</div>
+          </div>
         </div>
       </div>
-      <div class="trajets-col">
-        <h2>🏠 Retour</h2>
-        <div id="trajets-retour" class="trajets-list">
-          <p class="loading">Chargement…</p>
-        </div>
-      </div>
     </div>
-  </div>
-</section>
+  </section>
+</main>
 
 <!-- Modal réservation -->
-<div class="modal-overlay" id="modal" style="display:none">
+<div class="modal-overlay" id="modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modal">
-    <button class="modal-close" id="modal-close">✕</button>
-    <h2>Réserver une place</h2>
+    <button class="modal-close" id="modal-close" aria-label="Fermer">✕</button>
+    <h2 id="modal-title">Réserver une place</h2>
     <p id="modal-trajet-info" class="modal-info"></p>
     <form id="reservation-form">
       <label>Nombre de places</label>
       <div class="guests-counter">
-        <button type="button" id="btn-minus" class="counter-btn">−</button>
+        <button type="button" id="btn-minus" class="counter-btn" aria-label="Retirer une place">−</button>
         <span id="guests-display">1</span>
-        <button type="button" id="btn-plus" class="counter-btn">+</button>
+        <button type="button" id="btn-plus" class="counter-btn" aria-label="Ajouter une place">+</button>
       </div>
       <input type="hidden" id="input-guests" value="1">
 
       <div id="guests-fields"></div>
 
-      <button type="submit" class="btn-primary">Confirmer la réservation</button>
+      <button type="submit" class="btn-primary" id="submit-btn">Confirmer la réservation</button>
     </form>
-    <p id="modal-success" class="success-msg" style="display:none">✅ Réservation confirmée !</p>
-    <p id="modal-error" class="error-msg" style="display:none">❌ Une erreur est survenue.</p>
+    <p id="modal-success" class="success-msg" style="display:none" aria-live="polite">✅ Réservation confirmée !</p>
+    <p id="modal-error" class="error-msg" style="display:none" aria-live="polite">❌ Une erreur est survenue.</p>
   </div>
 </div>
 
@@ -105,29 +112,25 @@
   </div>
 </footer>
 
+<button class="scroll-top" id="scroll-top" aria-label="Retour en haut">↑</button>
+
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, collection, getDocs, doc, arrayUnion, query, orderBy, runTransaction }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { db } from './firebase-config.js';
+  import {
+    collection, getDocs, doc, arrayUnion, query, orderBy, runTransaction
+  } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { initScrollLine, initMobileMenu, initScrollTop, escapeHTML, isValidName, cleanInput, setupModal } from './main.js';
 
-  const firebaseConfig = {
-    apiKey:            "AIzaSyDpDr29d3kz5_4PYTe7xnAFWOtjaWCaTCY",
-    authDomain:        "lesbebouslocos.firebaseapp.com",
-    projectId:         "lesbebouslocos",
-    storageBucket:     "lesbebouslocos.firebasestorage.app",
-    messagingSenderId: "498635002834",
-    appId:             "1:498635002834:web:786eb34d0b78a7ab442e0b"
-  };
+  initScrollLine();
+  initMobileMenu();
+  initScrollTop();
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
-
+  const modalCtrl = setupModal(document.getElementById('modal'));
   let selectedTrajetId = null;
+  let isSubmitting = false;
 
-  // ─── Génère les champs nom/prénom selon le nombre de personnes ───
   function renderGuestFields(count) {
     const container = document.getElementById('guests-fields');
-
     const existing = [...container.querySelectorAll('.guest-block')].map(block => ({
       prenom: block.querySelector('.input-prenom').value,
       nom:    block.querySelector('.input-nom').value,
@@ -155,12 +158,12 @@
     }
   }
 
-  // ─── Charger les trajets ───
   async function loadTrajets() {
     const allerList  = document.getElementById('trajets-aller');
     const retourList = document.getElementById('trajets-retour');
-    allerList.innerHTML  = '<p class="loading">Chargement…</p>';
-    retourList.innerHTML = '<p class="loading">Chargement…</p>';
+    const loadingHTML = '<div class="loading"><div class="spinner"></div>Chargement…</div>';
+    allerList.innerHTML  = loadingHTML;
+    retourList.innerHTML = loadingHTML;
 
     try {
       const q    = query(collection(db, 'navette_trajets'), orderBy('order'));
@@ -174,71 +177,66 @@
         return;
       }
 
-snap.forEach(docSnap => {
-  const t = docSnap.data();
-  const placesRestantes = t.placesRestantes ?? 8;
-  const complet = placesRestantes <= 0;
+      snap.forEach(docSnap => {
+        const t = docSnap.data();
+        const placesRestantes = t.placesRestantes ?? 8;
+        const complet = placesRestantes <= 0;
 
-  // ─── Liste des passagers déjà inscrits ───
-  const reservations = t.reservations ?? [];
-  const passagersAffiches = reservations
-    .flatMap(r => r.passagers ?? [])
-    .map(p => `${p.prenom} ${p.nom}`.trim());
+        const reservations = t.reservations ?? [];
+        const passagersAffiches = reservations
+          .flatMap(r => r.passagers ?? [])
+          .map(p => `${p.prenom} ${p.nom}`.trim());
 
-  const listePassagersHTML = passagersAffiches.length
-    ? `<div class="trajet-passagers">
-         <p class="trajet-passagers-label">👥 Déjà inscrits</p>
-         <ul>
-           ${passagersAffiches.map(nom => `<li>${nom}</li>`).join('')}
-         </ul>
-       </div>`
-    : '';
+        const listePassagersHTML = passagersAffiches.length
+          ? `<div class="trajet-passagers">
+               <p class="trajet-passagers-label">👥 Déjà inscrits</p>
+               <ul>${passagersAffiches.map(nom => `<li>${escapeHTML(nom)}</li>`).join('')}</ul>
+             </div>`
+          : '';
 
-  const card = document.createElement('div');
-  card.className = 'trajet-card' + (complet ? ' complet' : '');
-  card.innerHTML = `
-    <div class="trajet-heure">${t.heure}</div>
-    <div class="trajet-route">${t.depart} → ${t.arrivee}</div>
-    <div class="trajet-notes">${t.notes ?? ''}</div>
-    <div class="trajet-places ${complet ? 'complet' : ''}">
-      ${complet
-        ? '🚫 Complet'
-        : `🪑 ${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`
-      }
-    </div>
-    ${listePassagersHTML}
-    ${!complet ? `
-      <button class="trajet-btn"
-        data-id="${docSnap.id}"
-        data-info="${t.heure} — ${t.depart} → ${t.arrivee}"
-        data-places="${placesRestantes}">
-        Réserver
-      </button>` : ''}
-  `;
+        const heure   = escapeHTML(t.heure || '');
+        const depart  = escapeHTML(t.depart || '');
+        const arrivee = escapeHTML(t.arrivee || '');
+        const notes   = escapeHTML(t.notes || '');
+        const info    = escapeHTML(`${t.heure} — ${t.depart} → ${t.arrivee}`);
 
-  const type = t.depart.toLowerCase().includes('château') ? 'retour' : 'aller';
+        const card = document.createElement('div');
+        card.className = 'trajet-card' + (complet ? ' complet' : '');
+        card.innerHTML = `
+          <div class="trajet-heure">${heure}</div>
+          <div class="trajet-route">${depart} → ${arrivee}</div>
+          <div class="trajet-notes">${notes}</div>
+          <div class="trajet-places ${complet ? 'complet' : ''}">
+            ${complet ? '🚫 Complet' : `🪑 ${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`}
+          </div>
+          ${listePassagersHTML}
+          ${!complet ? `
+            <button class="trajet-btn" data-id="${docSnap.id}" data-info="${info}" data-places="${placesRestantes}">
+              Réserver
+            </button>` : ''}
+        `;
 
-  if (type === 'retour') {
-    retourList.appendChild(card);
-  } else {
-    allerList.appendChild(card);
-  }
-});
+        const type = t.type === 'retour' || t.type === 'aller'
+          ? t.type
+          : (String(t.depart || '').toLowerCase().includes('château') ? 'retour' : 'aller');
+
+        (type === 'retour' ? retourList : allerList).appendChild(card);
+      });
 
       document.querySelectorAll('.trajet-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           selectedTrajetId = btn.dataset.id;
-          const placesRestantes = parseInt(btn.dataset.places);
+          const placesRestantes = parseInt(btn.dataset.places, 10);
 
-          document.getElementById('modal-trajet-info').textContent    = btn.dataset.info;
-          document.getElementById('input-guests').value               = 1;
-          document.getElementById('guests-display').textContent       = 1;
-          document.getElementById('modal').style.display              = 'flex';
-          document.getElementById('modal-success').style.display      = 'none';
-          document.getElementById('modal-error').style.display        = 'none';
-          document.getElementById('reservation-form').style.display   = 'block';
+          document.getElementById('modal-trajet-info').textContent  = btn.dataset.info;
+          document.getElementById('input-guests').value             = 1;
+          document.getElementById('guests-display').textContent     = 1;
+          document.getElementById('modal-success').style.display    = 'none';
+          document.getElementById('modal-error').style.display      = 'none';
+          document.getElementById('reservation-form').style.display = 'block';
 
           renderGuestFields(1);
+          modalCtrl.open(btn);
 
           const btnMinus = document.getElementById('btn-minus');
           const btnPlus  = document.getElementById('btn-plus');
@@ -251,7 +249,7 @@ snap.forEach(docSnap => {
           if (placesRestantes === 1) newPlus.disabled = true;
 
           newPlus.addEventListener('click', () => {
-            let val = parseInt(document.getElementById('input-guests').value);
+            let val = parseInt(document.getElementById('input-guests').value, 10);
             if (val < placesRestantes) {
               val++;
               document.getElementById('input-guests').value        = val;
@@ -263,7 +261,7 @@ snap.forEach(docSnap => {
           });
 
           newMinus.addEventListener('click', () => {
-            let val = parseInt(document.getElementById('input-guests').value);
+            let val = parseInt(document.getElementById('input-guests').value, 10);
             if (val > 1) {
               val--;
               document.getElementById('input-guests').value        = val;
@@ -276,80 +274,74 @@ snap.forEach(docSnap => {
         });
       });
 
-    } catch(e) {
+    } catch (e) {
       console.error('Erreur Firestore :', e);
-      allerList.innerHTML  = '<p class="error-msg">Erreur : ' + e.message + '</p>';
-      retourList.innerHTML = '<p class="error-msg">Erreur : ' + e.message + '</p>';
+      allerList.innerHTML  = '<p class="error-msg">Une erreur est survenue lors du chargement.</p>';
+      retourList.innerHTML = '<p class="error-msg">Une erreur est survenue lors du chargement.</p>';
     }
   }
 
-  document.getElementById('modal-close').addEventListener('click', () => {
-    document.getElementById('modal').style.display = 'none';
-  });
+  document.getElementById('modal-close').addEventListener('click', modalCtrl.close);
 
-document.getElementById('reservation-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const guests    = parseInt(document.getElementById('input-guests').value);
-  const trajetRef = doc(db, 'navette_trajets', selectedTrajetId);
+  document.getElementById('reservation-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
 
-  const guestBlocks = document.querySelectorAll('.guest-block');
+    const guests    = parseInt(document.getElementById('input-guests').value, 10);
+    const trajetRef = doc(db, 'navette_trajets', selectedTrajetId);
+    const guestBlocks = document.querySelectorAll('.guest-block');
+    const errorEl = document.getElementById('modal-error');
+    const submitBtn = document.getElementById('submit-btn');
 
-  // ─── Récupération + validation des champs saisis ───
-  const passagersInput = [...guestBlocks].map(block => ({
-    prenom:     block.querySelector('.input-prenom').value.trim(),
-    nomComplet: block.querySelector('.input-nom').value.trim(),
-  }));
+    const passagersInput = [...guestBlocks].map(block => ({
+      prenom: cleanInput(block.querySelector('.input-prenom').value),
+      nom:    cleanInput(block.querySelector('.input-nom').value),
+    }));
 
-  const incomplet = passagersInput.some(p => !p.prenom || !p.nomComplet);
-  if (incomplet) {
-    document.getElementById('modal-error').textContent   = '❌ Merci de remplir tous les champs nom/prénom.';
-    document.getElementById('modal-error').style.display = 'block';
-    return;
-  }
+    const invalide = passagersInput.some(p => !isValidName(p.prenom) || !isValidName(p.nom));
+    if (invalide) {
+      errorEl.textContent   = '❌ Merci de renseigner un nom et un prénom valides (2 à 40 caractères).';
+      errorEl.style.display = 'block';
+      return;
+    }
 
-  // ─── Troncature AVANT tout envoi vers Firestore ───
-  const passagers = passagersInput.map(p => ({
-    prenom: p.prenom,
-    nom:    p.nomComplet.charAt(0).toUpperCase() + '.'
-  }));
+    const passagers = passagersInput.map(p => ({
+      prenom: p.prenom,
+      nom:    p.nom.charAt(0).toUpperCase() + '.'
+    }));
 
-  try {
-    await runTransaction(db, async (transaction) => {
-      const trajetDoc = await transaction.get(trajetRef);
-      if (!trajetDoc.exists()) throw new Error('Trajet introuvable.');
+    isSubmitting = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Envoi en cours…';
+    errorEl.style.display = 'none';
 
-      const placesRestantes = trajetDoc.data().placesRestantes ?? 8;
-      if (guests > placesRestantes) throw new Error('Plus assez de places disponibles.');
+    try {
+      await runTransaction(db, async (transaction) => {
+        const trajetDoc = await transaction.get(trajetRef);
+        if (!trajetDoc.exists()) throw new Error('Trajet introuvable.');
 
-      const nouvelleReservation = {
-        passagers: passagers,
-        guests:    guests,
-        date:      new Date().toISOString()
-      };
+        const placesRestantes = trajetDoc.data().placesRestantes ?? 8;
+        if (guests > placesRestantes) throw new Error('Plus assez de places disponibles.');
 
-      transaction.update(trajetRef, {
-        placesRestantes: placesRestantes - guests,
-        reservations:    arrayUnion(nouvelleReservation)
+        transaction.update(trajetRef, {
+          placesRestantes: placesRestantes - guests,
+          reservations: arrayUnion({ passagers, guests, date: new Date().toISOString() })
+        });
       });
-    });
 
-    document.getElementById('modal-success').style.display    = 'block';
-    document.getElementById('reservation-form').style.display = 'none';
-    document.getElementById('modal-error').style.display      = 'none';
+      document.getElementById('modal-success').style.display    = 'block';
+      document.getElementById('reservation-form').style.display = 'none';
+      loadTrajets();
 
-    loadTrajets();
-
-  } catch(e) {
-    console.error('Erreur réservation :', e);
-    document.getElementById('modal-error').textContent   = '❌ ' + e.message;
-    document.getElementById('modal-error').style.display = 'block';
-  }
-});
-
-  window.addEventListener('scroll', () => {
-    const el  = document.getElementById('scroll-line');
-    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
-    el.style.width = pct + '%';
+    } catch (e) {
+      console.error('Erreur réservation :', e);
+      errorEl.textContent   = '❌ ' + (e.message || 'Une erreur est survenue.');
+      errorEl.style.display = 'block';
+    } finally {
+      isSubmitting = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Confirmer la réservation';
+    }
   });
 
   loadTrajets();
